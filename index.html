@@ -1,314 +1,446 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>SİR – Görüşme Notu</title>
-<style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f4f6f9; color: #1e2a35; }
-
-header {
-  background: linear-gradient(135deg, #1a3a5c, #2d5f8a);
-  color: white; padding: 14px 20px;
-  display: flex; align-items: center; justify-content: space-between;
-  position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 12px rgba(0,0,0,.2);
-}
-header .title-small { font-size: 10px; letter-spacing: 2px; opacity: .6; text-transform: uppercase; margin-bottom: 2px; }
-header h1 { font-family: Georgia, serif; font-size: 19px; font-weight: 600; }
-.tab-btns { display: flex; gap: 8px; align-items: center; }
-.tab-btn {
-  background: rgba(255,255,255,.1); color: white;
-  border: 1px solid rgba(255,255,255,.2); border-radius: 10px;
-  padding: 8px 14px; font-size: 12px; cursor: pointer; font-family: inherit;
-  display: flex; align-items: center; gap: 5px;
-}
-.tab-btn.active { background: rgba(255,255,255,.25); }
-.badge { background: #f0c940; color: #333; border-radius: 20px; padding: 1px 7px; font-size: 10px; font-weight: 700; }
-
-main { max-width: 720px; margin: 0 auto; padding: 24px 16px 60px; }
-
-.section { background: white; border-radius: 12px; margin-bottom: 16px; box-shadow: 0 1px 6px rgba(0,0,0,.07); overflow: hidden; }
-.section-title { background: #1a3a5c; color: white; padding: 10px 18px; font-weight: 600; font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; }
-.section-title span { opacity: .5; font-weight: 400; }
-.section-body { padding: 16px 18px; display: flex; flex-direction: column; gap: 12px; }
-.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-
-label { font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; display: block; }
-input, textarea {
-  border: 1.5px solid #d1d9e0; border-radius: 8px; padding: 9px 12px;
-  font-size: 13px; font-family: inherit; outline: none; width: 100%;
-  background: white; color: #1e2a35; transition: border .15s;
-}
-input:focus, textarea:focus { border-color: #2d5f8a; }
-textarea { resize: vertical; min-height: 72px; line-height: 1.7; }
-#ad_soyad { font-size: 16px; font-weight: 600; }
-
-.btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
-.btn { border: none; border-radius: 10px; padding: 11px 22px; font-size: 13px; font-family: inherit; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
-.btn-navy  { background: linear-gradient(135deg, #1a3a5c, #2d5f8a); color: white; }
-.btn-green { background: linear-gradient(135deg, #2d7a2d, #3d9a3d); color: white; }
-.btn-light { background: #e8f0f8; color: #1a3a5c; border: 1px solid #d1d9e0; }
-.btn-red   { background: #fef2f2; color: #c0392b; border: 1px solid #fecaca; }
-.btn-sm    { padding: 8px 14px; font-size: 12px; }
-
-.mesaj { border-radius: 10px; padding: 10px 16px; font-size: 13px; font-weight: 600; margin-top: 12px; display: none; }
-
-.kayit-kart { background: white; border-radius: 12px; margin-bottom: 12px; box-shadow: 0 1px 6px rgba(0,0,0,.07); overflow: hidden; border: 2px solid transparent; }
-.kayit-kart.secili { border-color: #2d5f8a; }
-.kayit-ust { padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; }
-.kayit-ad  { font-weight: 700; font-size: 15px; color: #1a3a5c; }
-.kayit-alt { font-size: 12px; color: #64748b; margin-top: 3px; }
-.kayit-not { padding: 10px 18px 12px; font-size: 12px; color: #64748b; border-top: 1px solid #f4f6f9; }
-.kayit-btns { display: flex; gap: 8px; }
-
-.bos-mesaj { background: white; border-radius: 12px; padding: 40px; text-align: center; color: #64748b; box-shadow: 0 1px 6px rgba(0,0,0,.07); }
-
-.liste-ust { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
-.liste-baslik { font-family: Georgia, serif; font-size: 18px; color: #1a3a5c; font-weight: 600; }
-.liste-btns { display: flex; gap: 8px; }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sosyal Yardım Formu</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 16px;
+      background: #f5f7fb;
+      color: #222;
+    }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    .card {
+      background: #fff;
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.08);
+    }
+    h1, h2 {
+      margin-top: 0;
+    }
+    .grid {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: 1fr;
+    }
+    @media (min-width: 700px) {
+      .grid-2 {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    input, textarea, select {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #cfd6e4;
+      border-radius: 10px;
+      font-size: 14px;
+      background: #fff;
+    }
+    textarea {
+      min-height: 90px;
+      resize: vertical;
+    }
+    button {
+      border: 0;
+      padding: 12px 16px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 700;
+    }
+    .btn-primary {
+      background: #0d6efd;
+      color: #fff;
+    }
+    .btn-danger {
+      background: #dc3545;
+      color: #fff;
+    }
+    .btn-secondary {
+      background: #6c757d;
+      color: #fff;
+    }
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+    .msg {
+      margin-top: 12px;
+      padding: 12px;
+      border-radius: 10px;
+      font-weight: 600;
+      display: none;
+    }
+    .ok {
+      background: #d1e7dd;
+      color: #0f5132;
+      display: block;
+    }
+    .err {
+      background: #f8d7da;
+      color: #842029;
+      display: block;
+    }
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .toolbar input {
+      max-width: 320px;
+      background: #fff;
+    }
+    .table-wrap {
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 900px;
+    }
+    th, td {
+      border-bottom: 1px solid #e5e7eb;
+      text-align: left;
+      padding: 10px 8px;
+      vertical-align: top;
+      font-size: 14px;
+    }
+    th {
+      background: #f8f9fc;
+      position: sticky;
+      top: 0;
+    }
+    .small {
+      font-size: 12px;
+      opacity: 0.8;
+    }
+    .empty {
+      padding: 14px;
+      background: #fff8db;
+      border-radius: 10px;
+      font-weight: 600;
+    }
+  </style>
 </head>
 <body>
-
-<header>
-  <div>
-    <div class="title-small">Kuşadası Belediyesi</div>
-    <h1>SİR – Görüşme Notu</h1>
-  </div>
-  <div class="tab-btns">
-    <button class="tab-btn active" id="btn-tab-form" onclick="gosterTab('form')">✏️ Form</button>
-    <button class="tab-btn" id="btn-tab-liste" onclick="gosterTab('liste')">
-      📋 Kayıtlar <span class="badge" id="kayit-sayisi" style="display:none">0</span>
-    </button>
-  </div>
-</header>
-
-<!-- FORM -->
-<div id="page-form">
-<main>
-  <div class="section">
-    <div class="section-title">Kişi Bilgisi</div>
-    <div class="section-body">
-      <div><label>Adı Soyadı *</label><input id="ad_soyad" placeholder="AHMET YILMAZ"/></div>
+  <div class="container">
+    <div class="card">
+      <h1>Sosyal Yardım Başvuru Formu</h1>
+      <div class="small">Kayıtlar Firebase üzerinde saklanır. Bu yüzden her cihazdan görünür.</div>
     </div>
-  </div>
 
-  <div class="section">
-    <div class="section-title">Görüşme Bilgileri</div>
-    <div class="section-body">
-      <div class="row2">
-        <div><label>Görüşme Tarihi</label><input id="tarih" placeholder="01.01.2026"/></div>
-        <div><label>Talep Edilen Yardım</label><input id="talep" placeholder="Nakdi Yardım, Yakacak..."/></div>
+    <div class="card">
+      <h2>Yeni Kayıt</h2>
+
+      <form id="kayitFormu">
+        <div class="grid grid-2">
+          <div>
+            <label for="ad_soyad">Ad Soyad</label>
+            <input type="text" id="ad_soyad" required />
+          </div>
+
+          <div>
+            <label for="tarih">Tarih</label>
+            <input type="date" id="tarih" />
+          </div>
+
+          <div>
+            <label for="talep">Talep</label>
+            <input type="text" id="talep" />
+          </div>
+
+          <div>
+            <label for="kisi">Kişi Sayısı</label>
+            <input type="number" id="kisi" min="0" />
+          </div>
+
+          <div>
+            <label for="gelir">Gelir Durumu</label>
+            <input type="text" id="gelir" />
+          </div>
+
+          <div>
+            <label for="saglik">Sağlık Durumu</label>
+            <input type="text" id="saglik" />
+          </div>
+
+          <div>
+            <label for="borc">Borç Durumu</label>
+            <input type="text" id="borc" />
+          </div>
+
+          <div>
+            <label for="sydv">SYDV</label>
+            <input type="text" id="sydv" />
+          </div>
+
+          <div>
+            <label for="belediye">Belediye Yardımı</label>
+            <input type="text" id="belediye" />
+          </div>
+
+          <div>
+            <label for="diger">Diğer</label>
+            <input type="text" id="diger" />
+          </div>
+        </div>
+
+        <div style="margin-top:12px;">
+          <label for="aciklama">Açıklama</label>
+          <textarea id="aciklama"></textarea>
+        </div>
+
+        <div class="actions">
+          <button type="submit" class="btn-primary">Kaydet</button>
+          <button type="button" class="btn-secondary" id="temizleBtn">Formu Temizle</button>
+        </div>
+
+        <div id="mesaj" class="msg"></div>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>Kayıtlar</h2>
+
+      <div class="toolbar">
+        <input type="text" id="arama" placeholder="Ad soyad veya talep ara..." />
+      </div>
+
+      <div id="kayitSayisi" class="small" style="margin-bottom:10px;"></div>
+
+      <div id="bosMesaj" class="empty" style="display:none;">
+        Henüz kayıt yok.
+      </div>
+
+      <div class="table-wrap">
+        <table id="kayitTablosu">
+          <thead>
+            <tr>
+              <th>Tarih</th>
+              <th>Ad Soyad</th>
+              <th>Talep</th>
+              <th>Kişi</th>
+              <th>Gelir</th>
+              <th>Sağlık</th>
+              <th>Borç</th>
+              <th>SYDV</th>
+              <th>Belediye</th>
+              <th>Diğer</th>
+              <th>Açıklama</th>
+              <th>İşlem</th>
+            </tr>
+          </thead>
+          <tbody id="kayitlarBody"></tbody>
+        </table>
       </div>
     </div>
   </div>
 
-  <div class="section">
-    <div class="section-title">Evdeki Kişiler <span>isim, yaş, ilişki</span></div>
-    <div class="section-body">
-      <textarea id="kisi" placeholder="Eşi Mehmet 55 yaş&#10;2 çocuk – 10 ve 14 yaş"></textarea>
-    </div>
-  </div>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import {
+      getFirestore,
+      collection,
+      addDoc,
+      onSnapshot,
+      query,
+      orderBy,
+      deleteDoc,
+      doc,
+      serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-  <div class="section">
-    <div class="section-title">Çalışma / Gelir Durumu</div>
-    <div class="section-body">
-      <textarea id="gelir" placeholder="Çalışmıyor&#10;Eşi 5.390 TL yaşlılık aylığı alıyor"></textarea>
-    </div>
-  </div>
+    const firebaseConfig = {
+      apiKey: "AIzaSyB9tYLbLRiY9HEfJQLQcyI5aij6wY2Qw_E",
+      authDomain: "rapor-1192a.firebaseapp.com",
+      projectId: "rapor-1192a",
+      storageBucket: "rapor-1192a.firebasestorage.app",
+      messagingSenderId: "880961076992",
+      appId: "1:880961076992:web:7cd6e7e03c066e06c7fde5"
+    };
 
-  <div class="section">
-    <div class="section-title">Sağlık / Engel <span>yoksa boş bırak</span></div>
-    <div class="section-body">
-      <textarea id="saglik" placeholder="%80 engelli, akülü sandalye kullanıyor"></textarea>
-    </div>
-  </div>
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const raporlarRef = collection(db, "raporlar");
 
-  <div class="section">
-    <div class="section-title">Konut / Kira / Borç</div>
-    <div class="section-body">
-      <textarea id="borc" placeholder="Kira 8.000 TL, kira borcu yok&#10;Elektrik borcu 1.500 TL"></textarea>
-    </div>
-  </div>
+    const kayitFormu = document.getElementById("kayitFormu");
+    const mesajEl = document.getElementById("mesaj");
+    const kayitlarBody = document.getElementById("kayitlarBody");
+    const kayitSayisi = document.getElementById("kayitSayisi");
+    const bosMesaj = document.getElementById("bosMesaj");
+    const aramaInput = document.getElementById("arama");
+    const temizleBtn = document.getElementById("temizleBtn");
 
-  <div class="section">
-    <div class="section-title">Değerlendirme</div>
-    <div class="section-body">
-      <div><label>SYDV Bilgisi</label><input id="sydv" placeholder="5.390 TL yaşlılık aylığı / Yardım almıyor"/></div>
-      <div><label>Belediye Geçmiş Yardımları</label><input id="belediye" placeholder="Boş → otomatik doldurulur"/></div>
-      <div><label>Diğer Notlar</label><textarea id="diger" placeholder="Diğer önemli bilgiler..."></textarea></div>
-    </div>
-  </div>
+    let tumKayitlar = [];
 
-  <div class="btn-row">
-    <button class="btn btn-green" onclick="kaydet()">💾 <span id="kaydet-label">Kaydet</span></button>
-    <button class="btn btn-navy"  onclick="kopyala()"><span id="kopya-label">📋 Notları Kopyala</span></button>
-    <button class="btn btn-light" onclick="yeniForm()">➕ Yeni</button>
-  </div>
-  <div class="mesaj" id="form-mesaj"></div>
-</main>
-</div>
+    function mesajYaz(text, ok = true) {
+      mesajEl.textContent = text;
+      mesajEl.className = "msg " + (ok ? "ok" : "err");
+    }
 
-<!-- LİSTE -->
-<div id="page-liste" style="display:none">
-<main>
-  <div class="liste-ust">
-    <div class="liste-baslik">Kayıtlı Görüşmeler</div>
-    <div class="liste-btns">
-      <button class="btn btn-red btn-sm" id="btn-tumunu-sil" onclick="tumunuSil()" style="display:none">🗑️ Tümünü Sil</button>
-      <button class="btn btn-green btn-sm" onclick="yeniForm()">➕ Yeni Görüşme</button>
-    </div>
-  </div>
-  <div id="liste-icerik"></div>
-</main>
-</div>
+    function mesajiTemizle() {
+      mesajEl.textContent = "";
+      mesajEl.className = "msg";
+    }
 
-<script>
-const STORAGE_KEY = "sir_gorusme_notlari";
-let secili = null;
+    function bugunVarsayilan() {
+      const now = new Date();
+      const yil = now.getFullYear();
+      const ay = String(now.getMonth() + 1).padStart(2, "0");
+      const gun = String(now.getDate()).padStart(2, "0");
+      return `${yil}-${ay}-${gun}`;
+    }
 
-function bugun() {
-  const t = new Date();
-  return `${String(t.getDate()).padStart(2,"0")}.${String(t.getMonth()+1).padStart(2,"0")}.${t.getFullYear()}`;
-}
-function yukle() {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); } catch { return []; }
-}
-function kaydet_depo(liste) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(liste));
-  const n = liste.length;
-  const badge = document.getElementById("kayit-sayisi");
-  badge.style.display = n > 0 ? "inline" : "none";
-  badge.textContent = n;
-  document.getElementById("btn-tumunu-sil").style.display = n > 0 ? "inline-flex" : "none";
-}
-function getForm() {
-  return ["ad_soyad","tarih","talep","kisi","gelir","saglik","borc","sydv","belediye","diger"]
-    .reduce((o,k) => { o[k] = document.getElementById(k).value.trim(); return o; }, {});
-}
-function setForm(d) {
-  ["ad_soyad","tarih","talep","kisi","gelir","saglik","borc","sydv","belediye","diger"]
-    .forEach(k => document.getElementById(k).value = d[k] || "");
-}
-function mesaj(metin, ok=true) {
-  const el = document.getElementById("form-mesaj");
-  el.textContent = metin;
-  el.style.display = "block";
-  el.style.background = ok ? "#d1fae5" : "#fef2f2";
-  el.style.border = `1.5px solid ${ok ? "#6ee7b7" : "#fecaca"}`;
-  el.style.color = ok ? "#065f46" : "#c0392b";
-  setTimeout(() => el.style.display = "none", 2500);
-}
+    function formTemizle() {
+      kayitFormu.reset();
+      document.getElementById("tarih").value = bugunVarsayilan();
+      mesajiTemizle();
+    }
 
-function kaydet() {
-  const form = getForm();
-  if (!form.ad_soyad) { mesaj("Adı Soyadı zorunludur!", false); return; }
-  const liste = yukle();
-  if (secili !== null) {
-    const idx = liste.findIndex(k => k.id === secili);
-    if (idx !== -1) liste[idx] = { ...liste[idx], ...form };
-  } else {
-    const k = { ...form, id: Date.now() };
-    liste.push(k);
-    secili = k.id;
-    document.getElementById("kaydet-label").textContent = "Güncelle";
-  }
-  kaydet_depo(liste);
-  mesaj("✅ Kaydedildi!");
-}
+    function getFormData() {
+      return {
+        ad_soyad: document.getElementById("ad_soyad").value.trim(),
+        tarih: document.getElementById("tarih").value.trim(),
+        talep: document.getElementById("talep").value.trim(),
+        kisi: document.getElementById("kisi").value.trim(),
+        gelir: document.getElementById("gelir").value.trim(),
+        saglik: document.getElementById("saglik").value.trim(),
+        borc: document.getElementById("borc").value.trim(),
+        sydv: document.getElementById("sydv").value.trim(),
+        belediye: document.getElementById("belediye").value.trim(),
+        diger: document.getElementById("diger").value.trim(),
+        aciklama: document.getElementById("aciklama").value.trim()
+      };
+    }
 
-function kopyala() {
-  const f = getForm();
-  const metin = [
-    "=== GÖRÜŞME NOTLARI ===",
-    f.ad_soyad ? `Ad Soyad: ${f.ad_soyad}` : "",
-    f.tarih    ? `Görüşme Tarihi: ${f.tarih}` : "",
-    f.talep    ? `Talep: ${f.talep}` : "",
-    f.kisi     ? `\nEvdeki kişiler:\n${f.kisi}` : "",
-    f.gelir    ? `\nGelir durumu:\n${f.gelir}` : "",
-    f.saglik   ? `\nSağlık durumu:\n${f.saglik}` : "",
-    f.borc     ? `\nKonut/Borç:\n${f.borc}` : "",
-    f.sydv     ? `\nSYDV: ${f.sydv}` : "",
-    `\nBelediye yardımları: ${f.belediye || "Yakın zamanda yardım almadığı gözlemlenmiştir."}`,
-    f.diger    ? `\nDiğer notlar:\n${f.diger}` : "",
-  ].filter(Boolean).join("\n");
-  navigator.clipboard.writeText(metin).then(() => {
-    const lbl = document.getElementById("kopya-label");
-    lbl.textContent = "✅ Kopyalandı!";
-    setTimeout(() => lbl.textContent = "📋 Notları Kopyala", 2500);
-  });
-}
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
 
-function yeniForm() {
-  secili = null;
-  setForm({ tarih: bugun() });
-  document.getElementById("kaydet-label").textContent = "Kaydet";
-  gosterTab("form");
-  window.scrollTo({ top: 0, behavior: "smooth" });
-}
+    function filtrelenmisKayitlar() {
+      const q = aramaInput.value.trim().toLowerCase();
+      if (!q) return tumKayitlar;
+      return tumKayitlar.filter(k => {
+        const ad = (k.ad_soyad || "").toLowerCase();
+        const talep = (k.talep || "").toLowerCase();
+        return ad.includes(q) || talep.includes(q);
+      });
+    }
 
-function ac(id) {
-  const k = yukle().find(k => k.id === id);
-  if (!k) return;
-  secili = id;
-  setForm(k);
-  document.getElementById("kaydet-label").textContent = "Güncelle";
-  gosterTab("form");
-  window.scrollTo({ top: 0, behavior: "smooth" });
-}
+    function tabloyuBas(kayitlar) {
+      kayitlarBody.innerHTML = "";
 
-function sil(id) {
-  const liste = yukle().filter(k => k.id !== id);
-  kaydet_depo(liste);
-  if (secili === id) { secili = null; setForm({ tarih: bugun() }); document.getElementById("kaydet-label").textContent = "Kaydet"; }
-  renderListe();
-}
+      if (!kayitlar.length) {
+        bosMesaj.style.display = "block";
+        kayitSayisi.textContent = "Toplam kayıt: 0";
+        return;
+      }
 
-function tumunuSil() {
-  kaydet_depo([]);
-  secili = null;
-  setForm({ tarih: bugun() });
-  document.getElementById("kaydet-label").textContent = "Kaydet";
-  renderListe();
-}
+      bosMesaj.style.display = "none";
+      kayitSayisi.textContent = `Toplam kayıt: ${kayitlar.length}`;
 
-function renderListe() {
-  const liste = yukle();
-  kaydet_depo(liste); // badge güncelle
-  const el = document.getElementById("liste-icerik");
-  if (liste.length === 0) {
-    el.innerHTML = `<div class="bos-mesaj"><div style="font-size:40px;margin-bottom:12px">📋</div><div style="font-weight:600">Henüz kayıt yok</div><div style="font-size:13px;margin-top:6px">Form sekmesinden görüşme notu ekleyin</div></div>`;
-    return;
-  }
-  el.innerHTML = liste.map(k => `
-    <div class="kayit-kart ${secili === k.id ? 'secili' : ''}">
-      <div class="kayit-ust">
-        <div>
-          <div class="kayit-ad">${k.ad_soyad}</div>
-          <div class="kayit-alt">${k.tarih ? "📅 "+k.tarih : ""}${k.talep ? "&nbsp;&nbsp;📌 "+k.talep : ""}</div>
-        </div>
-        <div class="kayit-btns">
-          <button class="btn btn-navy btn-sm" onclick="ac(${k.id})">✏️ Aç</button>
-          <button class="btn btn-red  btn-sm" onclick="sil(${k.id})">🗑️</button>
-        </div>
-      </div>
-      ${k.kisi ? `<div class="kayit-not">${k.kisi.split("\n")[0]}</div>` : ""}
-    </div>`).join("");
-}
+      for (const kayit of kayitlar) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${escapeHtml(kayit.tarih)}</td>
+          <td>${escapeHtml(kayit.ad_soyad)}</td>
+          <td>${escapeHtml(kayit.talep)}</td>
+          <td>${escapeHtml(kayit.kisi)}</td>
+          <td>${escapeHtml(kayit.gelir)}</td>
+          <td>${escapeHtml(kayit.saglik)}</td>
+          <td>${escapeHtml(kayit.borc)}</td>
+          <td>${escapeHtml(kayit.sydv)}</td>
+          <td>${escapeHtml(kayit.belediye)}</td>
+          <td>${escapeHtml(kayit.diger)}</td>
+          <td>${escapeHtml(kayit.aciklama)}</td>
+          <td>
+            <button class="btn-danger" data-id="${escapeHtml(kayit.id)}">Sil</button>
+          </td>
+        `;
+        kayitlarBody.appendChild(tr);
+      }
 
-function gosterTab(tab) {
-  document.getElementById("page-form").style.display  = tab === "form"  ? "block" : "none";
-  document.getElementById("page-liste").style.display = tab === "liste" ? "block" : "none";
-  document.getElementById("btn-tab-form").classList.toggle("active",  tab === "form");
-  document.getElementById("btn-tab-liste").classList.toggle("active", tab === "liste");
-  if (tab === "liste") renderListe();
-}
+      kayitlarBody.querySelectorAll(".btn-danger").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          const id = btn.getAttribute("data-id");
+          const onay = confirm("Bu kaydı silmek istiyor musun?");
+          if (!onay) return;
 
-// Init
-document.getElementById("tarih").value = bugun();
-const n = yukle().length;
-if (n > 0) { document.getElementById("kayit-sayisi").style.display = "inline"; document.getElementById("kayit-sayisi").textContent = n; }
-</script>
+          try {
+            await deleteDoc(doc(db, "raporlar", id));
+            mesajYaz("Kayıt silindi.");
+          } catch (err) {
+            console.error(err);
+            mesajYaz("Kayıt silinemedi: " + err.message, false);
+          }
+        });
+      });
+    }
+
+    kayitFormu.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      mesajiTemizle();
+
+      const form = getFormData();
+
+      if (!form.ad_soyad) {
+        mesajYaz("Ad Soyad zorunludur.", false);
+        return;
+      }
+
+      try {
+        await addDoc(raporlarRef, {
+          ...form,
+          createdAt: serverTimestamp()
+        });
+
+        mesajYaz("Kayıt başarıyla eklendi.");
+        formTemizle();
+      } catch (err) {
+        console.error(err);
+        mesajYaz("Kayıt eklenemedi: " + err.message, false);
+      }
+    });
+
+    temizleBtn.addEventListener("click", formTemizle);
+    aramaInput.addEventListener("input", () => tabloyuBas(filtrelenmisKayitlar()));
+
+    document.getElementById("tarih").value = bugunVarsayilan();
+
+    const q = query(raporlarRef, orderBy("createdAt", "desc"));
+    onSnapshot(q, (snapshot) => {
+      tumKayitlar = snapshot.docs.map(d => ({
+        id: d.id,
+        ...d.data()
+      }));
+      tabloyuBas(filtrelenmisKayitlar());
+    }, (err) => {
+      console.error(err);
+      mesajYaz("Kayıtlar yüklenemedi: " + err.message, false);
+    });
+  </script>
 </body>
 </html>

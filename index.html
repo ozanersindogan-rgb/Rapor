@@ -164,6 +164,7 @@ textarea { resize: vertical; min-height: 72px; line-height: 1.7; }
 </main>
 </div>
 
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
@@ -172,13 +173,12 @@ import {
   addDoc,
   updateDoc,
   deleteDoc,
+  getDocs,
+  getDoc,
   doc,
-  onSnapshot,
   query,
   orderBy,
-  serverTimestamp,
-  getDocs,
-  writeBatch
+  serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -195,11 +195,28 @@ const db = getFirestore(app);
 const raporlarRef = collection(db, "raporlar");
 
 let secili = null;
-let tumKayitlar = [];
+let cache = [];
 
 function bugun() {
   const t = new Date();
   return `${String(t.getDate()).padStart(2,"0")}.${String(t.getMonth()+1).padStart(2,"0")}.${t.getFullYear()}`;
+}
+
+function escapeHtml(s) {
+  return String(s ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function kayitSayisiGuncelle() {
+  const n = cache.length;
+  const badge = document.getElementById("kayit-sayisi");
+  badge.style.display = n > 0 ? "inline" : "none";
+  badge.textContent = n;
+  document.getElementById("btn-tumunu-sil").style.display = n > 0 ? "inline-flex" : "none";
 }
 
 function getForm() {
@@ -209,7 +226,7 @@ function getForm() {
 
 function setForm(d) {
   ["ad_soyad","tarih","talep","kisi","gelir","saglik","borc","sydv","belediye","diger"]
-    .forEach(k => document.getElementById(k).value = d?.[k] || "");
+    .forEach(k => document.getElementById(k).value = d[k] || "");
 }
 
 function mesaj(metin, ok=true) {
@@ -222,104 +239,96 @@ function mesaj(metin, ok=true) {
   setTimeout(() => el.style.display = "none", 2500);
 }
 
-function escapeHtml(str) {
-  return String(str || "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
+async function verileriYukle() {
+  const q = query(raporlarRef, orderBy("createdAt", "desc"));
+  const snap = await getDocs(q);
+  cache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  kayitSayisiGuncelle();
+  if (document.getElementById("page-liste").style.display !== "none") renderListe();
 }
 
-function badgeGuncelle() {
-  const n = tumKayitlar.length;
-  const badge = document.getElementById("kayit-sayisi");
-  badge.style.display = n > 0 ? "inline" : "none";
-  badge.textContent = n;
-  document.getElementById("btn-tumunu-sil").style.display = n > 0 ? "inline-flex" : "none";
-}
-
-window.kaydet = async function kaydet() {
+async function kaydet() {
   const form = getForm();
   if (!form.ad_soyad) { mesaj("Adı Soyadı zorunludur!", false); return; }
 
   try {
-    if (secili) {
-      await updateDoc(doc(db, "raporlar", secili), {
+    if (secili !== null) {
+      const ref = doc(db, "raporlar", secili);
+      await updateDoc(ref, {
         ...form,
         updatedAt: serverTimestamp()
       });
       mesaj("✅ Güncellendi!");
     } else {
-      const yeni = await addDoc(raporlarRef, {
+      const ref = await addDoc(raporlarRef, {
         ...form,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       });
-      secili = yeni.id;
+      secili = ref.id;
       document.getElementById("kaydet-label").textContent = "Güncelle";
       mesaj("✅ Kaydedildi!");
     }
-  } catch (e) {
-    console.error(e);
-    mesaj("Kayıt sırasında hata oluştu!", false);
+    await verileriYukle();
+  } catch (err) {
+    console.error(err);
+    mesaj("Kayıt sırasında hata oluştu: " + err.message, false);
   }
-};
+}
 
-window.kopyala = function kopyala() {
+function kopyala() {
   const f = getForm();
   const metin = [
     "=== GÖRÜŞME NOTLARI ===",
     f.ad_soyad ? `Ad Soyad: ${f.ad_soyad}` : "",
     f.tarih    ? `Görüşme Tarihi: ${f.tarih}` : "",
     f.talep    ? `Talep: ${f.talep}` : "",
-    f.kisi     ? `
-Evdeki kişiler:
-${f.kisi}` : "",
-    f.gelir    ? `
-Gelir durumu:
-${f.gelir}` : "",
-    f.saglik   ? `
-Sağlık durumu:
-${f.saglik}` : "",
-    f.borc     ? `
-Konut/Borç:
-${f.borc}` : "",
-    f.sydv     ? `
-SYDV: ${f.sydv}` : "",
-    `
-Belediye yardımları: ${f.belediye || "Yakın zamanda yardım almadığı gözlemlenmiştir."}`,
-    f.diger    ? `
-Diğer notlar:
-${f.diger}` : "",
-  ].filter(Boolean).join("
-");
+    f.kisi     ? `\nEvdeki kişiler:\n${f.kisi}` : "",
+    f.gelir    ? `\nGelir durumu:\n${f.gelir}` : "",
+    f.saglik   ? `\nSağlık durumu:\n${f.saglik}` : "",
+    f.borc     ? `\nKonut/Borç:\n${f.borc}` : "",
+    f.sydv     ? `\nSYDV: ${f.sydv}` : "",
+    `\nBelediye yardımları: ${f.belediye || "Yakın zamanda yardım almadığı gözlemlenmiştir."}`,
+    f.diger    ? `\nDiğer notlar:\n${f.diger}` : "",
+  ].filter(Boolean).join("\n");
+
   navigator.clipboard.writeText(metin).then(() => {
     const lbl = document.getElementById("kopya-label");
     lbl.textContent = "✅ Kopyalandı!";
     setTimeout(() => lbl.textContent = "📋 Notları Kopyala", 2500);
+  }).catch(() => {
+    mesaj("Kopyalama başarısız oldu.", false);
   });
-};
+}
 
-window.yeniForm = function yeniForm() {
+function yeniForm() {
   secili = null;
   setForm({ tarih: bugun() });
   document.getElementById("kaydet-label").textContent = "Kaydet";
   gosterTab("form");
   window.scrollTo({ top: 0, behavior: "smooth" });
-};
+}
 
-window.ac = function ac(id) {
-  const k = tumKayitlar.find(k => k.id === id);
-  if (!k) return;
-  secili = id;
-  setForm(k);
-  document.getElementById("kaydet-label").textContent = "Güncelle";
-  gosterTab("form");
-  window.scrollTo({ top: 0, behavior: "smooth" });
-};
+async function ac(id) {
+  try {
+    const ref = doc(db, "raporlar", id);
+    const snap = await getDoc(ref);
+    if (!snap.exists()) {
+      mesaj("Kayıt bulunamadı.", false);
+      return;
+    }
+    secili = id;
+    setForm(snap.data());
+    document.getElementById("kaydet-label").textContent = "Güncelle";
+    gosterTab("form");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  } catch (err) {
+    console.error(err);
+    mesaj("Kayıt açılamadı: " + err.message, false);
+  }
+}
 
-window.sil = async function sil(id) {
+async function sil(id) {
   try {
     await deleteDoc(doc(db, "raporlar", id));
     if (secili === id) {
@@ -327,78 +336,70 @@ window.sil = async function sil(id) {
       setForm({ tarih: bugun() });
       document.getElementById("kaydet-label").textContent = "Kaydet";
     }
-  } catch (e) {
-    console.error(e);
-    mesaj("Kayıt silinemedi!", false);
+    await verileriYukle();
+  } catch (err) {
+    console.error(err);
+    mesaj("Kayıt silinemedi: " + err.message, false);
   }
-};
+}
 
-window.tumunuSil = async function tumunuSil() {
-  const onay = confirm("Tüm kayıtlar silinsin mi?");
-  if (!onay) return;
-
+async function tumunuSil() {
+  if (!confirm("Tüm kayıtlar silinsin mi?")) return;
   try {
     const snap = await getDocs(raporlarRef);
-    const batch = writeBatch(db);
-    snap.forEach(item => batch.delete(item.ref));
-    await batch.commit();
+    await Promise.all(snap.docs.map(d => deleteDoc(d.ref)));
     secili = null;
     setForm({ tarih: bugun() });
     document.getElementById("kaydet-label").textContent = "Kaydet";
-    mesaj("Tüm kayıtlar silindi.");
-  } catch (e) {
-    console.error(e);
-    mesaj("Tüm kayıtlar silinemedi!", false);
+    await verileriYukle();
+  } catch (err) {
+    console.error(err);
+    mesaj("Tüm kayıtlar silinemedi: " + err.message, false);
   }
-};
+}
 
 function renderListe() {
-  badgeGuncelle();
+  kayitSayisiGuncelle();
+  const liste = cache;
   const el = document.getElementById("liste-icerik");
-  if (tumKayitlar.length === 0) {
+  if (liste.length === 0) {
     el.innerHTML = `<div class="bos-mesaj"><div style="font-size:40px;margin-bottom:12px">📋</div><div style="font-weight:600">Henüz kayıt yok</div><div style="font-size:13px;margin-top:6px">Form sekmesinden görüşme notu ekleyin</div></div>`;
     return;
   }
-  el.innerHTML = tumKayitlar.map(k => `
+  el.innerHTML = liste.map(k => `
     <div class="kayit-kart ${secili === k.id ? 'secili' : ''}">
       <div class="kayit-ust">
         <div>
           <div class="kayit-ad">${escapeHtml(k.ad_soyad)}</div>
-          <div class="kayit-alt">${k.tarih ? "📅 "+escapeHtml(k.tarih) : ""}${k.talep ? "&nbsp;&nbsp;📌 "+escapeHtml(k.talep) : ""}</div>
+          <div class="kayit-alt">${k.tarih ? "📅 " + escapeHtml(k.tarih) : ""}${k.talep ? "&nbsp;&nbsp;📌 " + escapeHtml(k.talep) : ""}</div>
         </div>
         <div class="kayit-btns">
           <button class="btn btn-navy btn-sm" onclick="ac('${k.id}')">✏️ Aç</button>
-          <button class="btn btn-red  btn-sm" onclick="sil('${k.id}')">🗑️</button>
+          <button class="btn btn-red btn-sm" onclick="sil('${k.id}')">🗑️</button>
         </div>
       </div>
-      ${k.kisi ? `<div class="kayit-not">${escapeHtml(String(k.kisi).split("
-")[0])}</div>` : ""}
+      ${k.kisi ? `<div class="kayit-not">${escapeHtml(String(k.kisi).split("\n")[0])}</div>` : ""}
     </div>`).join("");
 }
 
-window.gosterTab = function gosterTab(tab) {
+function gosterTab(tab) {
   document.getElementById("page-form").style.display  = tab === "form"  ? "block" : "none";
   document.getElementById("page-liste").style.display = tab === "liste" ? "block" : "none";
   document.getElementById("btn-tab-form").classList.toggle("active",  tab === "form");
   document.getElementById("btn-tab-liste").classList.toggle("active", tab === "liste");
   if (tab === "liste") renderListe();
-};
+}
+
+window.kaydet = kaydet;
+window.kopyala = kopyala;
+window.yeniForm = yeniForm;
+window.ac = ac;
+window.sil = sil;
+window.tumunuSil = tumunuSil;
+window.gosterTab = gosterTab;
 
 document.getElementById("tarih").value = bugun();
-
-const q = query(raporlarRef, orderBy("createdAt", "desc"));
-onSnapshot(q, (snapshot) => {
-  tumKayitlar = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-  if (secili && !tumKayitlar.some(k => k.id === secili)) {
-    secili = null;
-    document.getElementById("kaydet-label").textContent = "Kaydet";
-  }
-  badgeGuncelle();
-  if (document.getElementById("page-liste").style.display !== "none") renderListe();
-}, (e) => {
-  console.error(e);
-  mesaj("Kayıtlar yüklenemedi! Firestore kurallarını kontrol et.", false);
-});
+verileriYukle();
 </script>
 </body>
 </html>

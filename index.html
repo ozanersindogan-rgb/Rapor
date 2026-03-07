@@ -4,207 +4,204 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Kuşadası Belediyesi - SİR Görüşme Notu</title>
+  <script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f4f6f9; color: #1e2a35; }
     header { background: linear-gradient(135deg, #1a3a5c, #2d5f8a); color: white; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 12px rgba(0,0,0,.2); }
     header .title-small { font-size: 10px; letter-spacing: 2px; opacity: .6; text-transform: uppercase; margin-bottom: 2px; }
     header h1 { font-family: Georgia, serif; font-size: 19px; font-weight: 600; }
-    .tab-btns { display: flex; gap: 8px; align-items: center; }
+    .tab-btns { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
     .tab-btn { background: rgba(255,255,255,.1); color: white; border: 1px solid rgba(255,255,255,.2); border-radius: 10px; padding: 8px 14px; font-size: 12px; cursor: pointer; font-family: inherit; display: flex; align-items: center; gap: 5px; }
     .tab-btn.active { background: rgba(255,255,255,.25); }
     .badge { background: #f0c940; color: #333; border-radius: 20px; padding: 1px 7px; font-size: 10px; font-weight: 700; }
     main { max-width: 720px; margin: 0 auto; padding: 24px 16px 60px; }
     .section { background: white; border-radius: 12px; margin-bottom: 16px; box-shadow: 0 1px 6px rgba(0,0,0,.07); overflow: hidden; }
     .section-title { background: #1a3a5c; color: white; padding: 10px 18px; font-weight: 600; font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; }
+    .section-title span { opacity: .5; font-weight: 400; }
     .section-body { padding: 16px 18px; display: flex; flex-direction: column; gap: 12px; }
     .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 640px) { .row2 { grid-template-columns: 1fr; } }
     label { font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; display: block; }
     input, textarea { border: 1.5px solid #d1d9e0; border-radius: 8px; padding: 9px 12px; font-size: 13px; font-family: inherit; outline: none; width: 100%; background: white; color: #1e2a35; transition: border .15s; }
     input:focus, textarea:focus { border-color: #2d5f8a; }
     textarea { resize: vertical; min-height: 72px; line-height: 1.7; }
     #ad_soyad { font-size: 16px; font-weight: 600; }
-    .btn-row, .liste-btns, .kayit-btns { display: flex; gap: 10px; flex-wrap: wrap; }
+    .btn-row, .liste-btns, .secim-btns { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
     .btn { border: none; border-radius: 10px; padding: 11px 22px; font-size: 13px; font-family: inherit; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
     .btn-navy { background: linear-gradient(135deg, #1a3a5c, #2d5f8a); color: white; }
     .btn-green { background: linear-gradient(135deg, #2d7a2d, #3d9a3d); color: white; }
     .btn-light { background: #e8f0f8; color: #1a3a5c; border: 1px solid #d1d9e0; }
     .btn-red { background: #fef2f2; color: #c0392b; border: 1px solid #fecaca; }
+    .btn-gold { background: #fff7db; color: #7a5a00; border: 1px solid #f5de88; }
     .btn-sm { padding: 8px 14px; font-size: 12px; }
-    .mesaj { border-radius: 10px; padding: 10px 16px; font-size: 13px; font-weight: 600; margin-top: 12px; display: none; }
+    .mesaj, .uyari { border-radius: 10px; padding: 10px 16px; font-size: 13px; font-weight: 600; margin-top: 12px; display: none; }
     .kayit-kart { background: white; border-radius: 12px; margin-bottom: 12px; box-shadow: 0 1px 6px rgba(0,0,0,.07); overflow: hidden; border: 2px solid transparent; }
     .kayit-kart.secili { border-color: #2d5f8a; }
     .kayit-ust { padding: 14px 18px; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
     .kayit-ad { font-weight: 700; font-size: 15px; color: #1a3a5c; }
-    .kayit-alt { font-size: 12px; color: #64748b; margin-top: 3px; }
+    .kayit-alt { font-size: 12px; color: #64748b; margin-top: 3px; line-height: 1.5; }
     .kayit-not { padding: 10px 18px 12px; font-size: 12px; color: #64748b; border-top: 1px solid #f4f6f9; }
+    .kayit-btns { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
     .bos-mesaj { background: white; border-radius: 12px; padding: 40px; text-align: center; color: #64748b; box-shadow: 0 1px 6px rgba(0,0,0,.07); }
     .liste-ust { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
     .liste-baslik { font-family: Georgia, serif; font-size: 18px; color: #1a3a5c; font-weight: 600; }
-    .yardim-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; }
-    .check-item { border: 1.5px solid #d1d9e0; border-radius: 10px; padding: 10px 12px; display: flex; align-items: center; gap: 8px; background: #fff; }
-    .check-item input { width: auto; margin: 0; }
-    .check-item span { font-size: 13px; font-weight: 600; color: #1e2a35; }
-    .helper, .sirali-bilgi { font-size: 12px; color: #64748b; }
-    .ekler-listesi { display: flex; flex-direction: column; gap: 8px; }
-    .ek-item { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid #d1d9e0; border-radius: 10px; background: #fff; }
-    .ek-item a { color: #1a3a5c; text-decoration: none; font-size: 13px; font-weight: 600; }
-    .ek-item small { color: #64748b; display: block; margin-top: 2px; }
-    .secim-cb { width: 18px; height: 18px; accent-color: #1a3a5c; }
-    .giris-ekrani { position: fixed; inset: 0; background: linear-gradient(135deg, rgba(26,58,92,.96), rgba(45,95,138,.96)); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 20px; }
-    .giris-kutu { width: 100%; max-width: 380px; background: white; border-radius: 16px; padding: 24px; box-shadow: 0 10px 30px rgba(0,0,0,.25); }
-    .giris-kutu h2 { font-family: Georgia, serif; color: #1a3a5c; margin-bottom: 8px; }
-    .giris-kutu p { color: #64748b; font-size: 13px; margin-bottom: 16px; }
-    .giris-hata { display: none; margin-top: 10px; font-size: 13px; font-weight: 600; color: #c0392b; }
-    .record-main { display: flex; gap: 12px; width: 100%; }
-    .record-text { flex: 1; min-width: 0; }
-    @media (max-width: 640px) {
-      .row2, .yardim-grid { grid-template-columns: 1fr; }
-      .kayit-ust { flex-direction: column; }
-      .kayit-btns .btn, .liste-btns .btn { flex: 1; justify-content: center; }
-      header { padding: 12px 14px; }
-      header h1 { font-size: 17px; }
-      .tab-btn { padding: 8px 10px; }
-    }
+    .login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 16px; }
+    .login-card { width: 100%; max-width: 420px; background: white; border-radius: 16px; box-shadow: 0 10px 28px rgba(0,0,0,.12); overflow: hidden; }
+    .login-head { background: linear-gradient(135deg, #1a3a5c, #2d5f8a); color: white; padding: 20px; }
+    .login-body { padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+    .checkbox-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    @media (max-width: 540px) { .checkbox-grid { grid-template-columns: 1fr; } }
+    .check-card { border: 1.5px solid #d1d9e0; border-radius: 10px; padding: 10px 12px; display: flex; align-items: center; gap: 8px; background: #fff; }
+    .check-card input { width: auto; }
+    .ek-kutu { background: #f8fbff; border: 1px dashed #b9c8d8; border-radius: 10px; padding: 12px; }
+    .kucuk { font-size: 12px; color: #64748b; }
+    .dosya-link { word-break: break-all; }
+    .secim-label { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #64748b; }
   </style>
 </head>
 <body>
-  <div id="giris-ekrani" class="giris-ekrani">
-    <div class="giris-kutu">
-      <div class="title-small" style="color:#64748b; margin-bottom:6px;">Kuşadası Belediyesi</div>
-      <h2>SİR – Güvenli Giriş</h2>
-      <p>Üyelik gerekmez. Tek şifre ile giriş yapılır.</p>
-      <label for="giris-sifre">Giriş Şifresi</label>
-      <input type="password" id="giris-sifre" placeholder="Şifre giriniz" />
-      <div class="btn-row" style="margin-top:14px;">
-        <button class="btn btn-navy" type="button" onclick="girisYap()">🔓 Giriş Yap</button>
+  <div id="login-screen" class="login-wrap">
+    <div class="login-card">
+      <div class="login-head">
+        <div class="title-small">Kuşadası Belediyesi</div>
+        <h1>SİR – Görüşme Notu</h1>
       </div>
-      <div id="giris-hata" class="giris-hata">Şifre hatalı.</div>
+      <div class="login-body">
+        <div>
+          <label for="login-password">Giriş Şifresi</label>
+          <input type="password" id="login-password" placeholder="Şifre girin" />
+        </div>
+        <button class="btn btn-navy" onclick="girisYap()">🔐 Giriş Yap</button>
+        <div id="login-mesaj" class="mesaj"></div>
+      </div>
     </div>
   </div>
 
-  <header>
-    <div>
-      <div class="title-small">Kuşadası Belediyesi</div>
-      <h1>SİR – Görüşme Notu</h1>
-    </div>
-    <div class="tab-btns">
-      <button id="btn-tab-form" class="tab-btn active" onclick="gosterTab('form')">✏️ Form</button>
-      <button id="btn-tab-liste" class="tab-btn" onclick="gosterTab('liste')">📋 Kayıtlar <span id="kayit-sayisi" class="badge" style="display:none;">0</span></button>
-    </div>
-  </header>
+  <div id="app" style="display:none;">
+    <header>
+      <div>
+        <div class="title-small">Kuşadası Belediyesi</div>
+        <h1>SİR – Görüşme Notu</h1>
+      </div>
+      <div class="tab-btns">
+        <button id="btn-tab-form" class="tab-btn active" onclick="gosterTab('form')">✏️ Form</button>
+        <button id="btn-tab-liste" class="tab-btn" onclick="gosterTab('liste')">📋 Kayıtlar <span class="badge" id="kayit-sayisi" style="display:none">0</span></button>
+      </div>
+    </header>
 
-  <main id="uygulama" style="display:none;">
-    <div id="page-form">
-      <div class="section">
-        <div class="section-title">Kişi Bilgisi</div>
-        <div class="section-body">
-          <div>
-            <label for="ad_soyad">Adı Soyadı *</label>
-            <input id="ad_soyad" type="text" />
+    <main>
+      <div id="page-form">
+        <div class="section">
+          <div class="section-title">Kişi Bilgisi</div>
+          <div class="section-body">
+            <div>
+              <label for="ad_soyad">Adı Soyadı *</label>
+              <input id="ad_soyad" type="text" />
+            </div>
           </div>
         </div>
-      </div>
 
-      <div class="section">
-        <div class="section-title">Görüşme Bilgileri</div>
-        <div class="section-body">
-          <div class="row2">
-            <div>
-              <label for="tarih">Görüşme Tarihi</label>
-              <input id="tarih" type="date" />
+        <div class="section">
+          <div class="section-title">Görüşme Bilgileri</div>
+          <div class="section-body">
+            <div class="row2">
+              <div>
+                <label for="tarih">Görüşme Tarihi</label>
+                <input id="tarih" type="text" placeholder="GG.AA.YYYY" />
+              </div>
+              <div>
+                <label for="talep_diger">Diğer Talep</label>
+                <input id="talep_diger" type="text" placeholder="Varsa yazın" />
+              </div>
             </div>
+
             <div>
               <label>Talep Edilen Yardım</label>
-              <div class="helper" style="margin-bottom:8px;">Birden fazla seçenek işaretlenebilir.</div>
-              <div class="yardim-grid">
-                <label class="check-item"><input type="checkbox" id="yardim_nakdi" /><span>Nakdi Yardım</span></label>
-                <label class="check-item"><input type="checkbox" id="yardim_erzak" /><span>Erzak</span></label>
-                <label class="check-item"><input type="checkbox" id="yardim_evdebakim" /><span>Evde Bakım</span></label>
-                <label class="check-item"><input type="checkbox" id="yardim_diger_chk" /><span>Diğer</span></label>
-              </div>
-              <div style="margin-top:8px;">
-                <input id="yardim_diger_text" type="text" placeholder="Diğer yardım türü" />
+              <div class="checkbox-grid">
+                <label class="check-card"><input type="checkbox" class="talep-check" value="Nakdi Yardım"> <span>Nakdi Yardım</span></label>
+                <label class="check-card"><input type="checkbox" class="talep-check" value="Erzak"> <span>Erzak</span></label>
+                <label class="check-card"><input type="checkbox" class="talep-check" value="Evde Bakım"> <span>Evde Bakım</span></label>
+                <label class="check-card"><input type="checkbox" class="talep-check" value="Diğer"> <span>Diğer</span></label>
               </div>
             </div>
-          </div>
-          <div>
-            <label for="kisi">Evdeki Kişiler isim, yaş, ilişki</label>
-            <textarea id="kisi"></textarea>
-          </div>
-          <div>
-            <label for="gelir">Çalışma / Gelir Durumu</label>
-            <textarea id="gelir"></textarea>
-          </div>
-          <div>
-            <label for="saglik">Sağlık / Engel yoksa boş bırak</label>
-            <textarea id="saglik"></textarea>
-          </div>
-          <div>
-            <label for="borc">Konut / Kira / Borç</label>
-            <textarea id="borc"></textarea>
+
+            <div>
+              <label for="kisi">Evdeki Kişiler isim, yaş, ilişki</label>
+              <textarea id="kisi"></textarea>
+            </div>
+            <div>
+              <label for="gelir">Çalışma / Gelir Durumu</label>
+              <textarea id="gelir"></textarea>
+            </div>
+            <div>
+              <label for="saglik">Sağlık / Engel yoksa boş bırak</label>
+              <textarea id="saglik"></textarea>
+            </div>
+            <div>
+              <label for="borc">Konut / Kira / Borç</label>
+              <textarea id="borc"></textarea>
+            </div>
+            <div>
+              <label for="sydv">SYDV Bilgisi</label>
+              <input id="sydv" type="text" />
+            </div>
+            <div>
+              <label for="belediye">Belediye Geçmiş Yardımları</label>
+              <textarea id="belediye"></textarea>
+            </div>
+            <div>
+              <label for="diger">Diğer Notlar</label>
+              <textarea id="diger"></textarea>
+            </div>
+
+            <div class="ek-kutu">
+              <label for="foto_dosya">Fotoğraf Yükle (link oluşur)</label>
+              <input id="foto_dosya" type="file" accept="image/*" />
+              <div class="kucuk" style="margin-top:8px;">Fotoğraf ImgBB’ye yüklenir ve linki kayda eklenir.</div>
+            </div>
+
+            <div>
+              <label for="dosya_link">PDF / Evrak Linki</label>
+              <input id="dosya_link" type="url" placeholder="PDF veya başka evrak linki" />
+            </div>
+
+            <div id="upload-uyari" class="uyari"></div>
+            <div id="form-mesaj" class="mesaj"></div>
+
+            <div class="btn-row">
+              <button class="btn btn-navy" onclick="kaydet()"><span id="kaydet-label">Kaydet</span></button>
+              <button class="btn btn-light" onclick="kopyala()"><span id="kopya-label">📋 Notları Kopyala</span></button>
+              <button class="btn btn-green" onclick="yeniForm()">➕ Yeni</button>
+            </div>
           </div>
         </div>
       </div>
 
-      <div class="section">
-        <div class="section-title">Değerlendirme</div>
-        <div class="section-body">
-          <div>
-            <label for="sydv">SYDV Bilgisi</label>
-            <textarea id="sydv"></textarea>
-          </div>
-          <div>
-            <label for="belediye">Belediye Geçmiş Yardımları</label>
-            <textarea id="belediye"></textarea>
-          </div>
-          <div>
-            <label for="diger">Diğer Notlar</label>
-            <textarea id="diger"></textarea>
-          </div>
-          <div>
-            <label for="ekler">Fotoğraf / PDF Eki</label>
-            <input id="ekler" type="file" accept="image/*,application/pdf" multiple />
-            <div class="helper" style="margin-top:8px;">Fotoğraf veya PDF ekleyebilirsin. Kayıtla birlikte yüklenir.</div>
-            <div id="ekler-mevcut" class="ekler-listesi" style="margin-top:10px;"></div>
-          </div>
-          <div class="btn-row">
-            <button class="btn btn-green" type="button" onclick="kaydet()">💾 <span id="kaydet-label">Kaydet</span></button>
-            <button class="btn btn-light" type="button" onclick="kopyala()"><span id="kopya-label">📋 Notları Kopyala</span></button>
-            <button class="btn btn-navy" type="button" onclick="wordIndir()">📄 Word İndir</button>
-            <button class="btn btn-light" type="button" onclick="yeniForm()">➕ Yeni</button>
-          </div>
-          <div id="form-mesaj" class="mesaj"></div>
-        </div>
-      </div>
-    </div>
-
-    <div id="page-liste" style="display:none;">
-      <div class="liste-ust">
-        <div>
+      <div id="page-liste" style="display:none;">
+        <div class="liste-ust">
           <div class="liste-baslik">Kayıtlı Görüşmeler</div>
-          <div class="sirali-bilgi">Görüşme tarihine göre en yeni üstte sıralanır.</div>
+          <div class="liste-btns">
+            <button class="btn btn-gold btn-sm" onclick="tumunuSec()">☑️ Tümünü Seç</button>
+            <button class="btn btn-light btn-sm" onclick="secimiTemizle()">⬜ Seçimi Kaldır</button>
+            <button class="btn btn-green btn-sm" onclick="secilenDosyalariIndir()">📥 Seçilen Dosyaları İndir</button>
+            <button id="btn-tumunu-sil" class="btn btn-red btn-sm" onclick="tumunuSil()" style="display:none">🗑️ Tümünü Sil</button>
+            <button class="btn btn-light btn-sm" onclick="yeniForm()">➕ Yeni Görüşme</button>
+          </div>
         </div>
-        <div class="liste-btns">
-          <button class="btn btn-light btn-sm" type="button" onclick="tumunuSecToggle()">☑️ Tümünü Seç / Kaldır</button>
-          <button class="btn btn-light btn-sm" type="button" onclick="seciliWordleriIndir()">📦 Seçili Word ZIP</button>
-          <button class="btn btn-light btn-sm" type="button" onclick="seciliEkleriIndir()">🗂️ Seçili Ekler ZIP</button>
-          <button id="btn-tumunu-sil" class="btn btn-red btn-sm" type="button" onclick="tumunuSil()" style="display:none;">🗑️ Tümünü Sil</button>
-          <button class="btn btn-light btn-sm" type="button" onclick="yeniForm()">➕ Yeni Görüşme</button>
-        </div>
+        <div id="liste-icerik"></div>
       </div>
-      <div id="liste-icerik"></div>
-    </div>
-  </main>
-
-  <script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+    </main>
+  </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getFirestore, collection, addDoc, updateDoc, deleteDoc, getDocs, getDoc, doc, query, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-    import { getStorage, ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+    import { getFirestore, collection, addDoc, updateDoc, deleteDoc, getDocs, getDoc, doc, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const SIFRE = "ozanersin5752";
+    const IMGBB_KEY = "a4bf9947bd3106b22e140266f63c713b";
 
     const firebaseConfig = {
       apiKey: "AIzaSyB9tYLbLRiY9HEfJQLQcyI5aij6wY2Qw_E",
@@ -217,35 +214,15 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
-    const storage = getStorage(app);
     const raporlarRef = collection(db, "raporlar");
 
-    const GIRIS_SIFRESI = "ozanersin5752";
     let secili = null;
     let cache = [];
-    let mevcutEkler = [];
-    const seciliKayitlar = new Set();
+    let secilenler = new Set();
 
-    function bugunInput() {
+    function bugun() {
       const t = new Date();
-      return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`;
-    }
-
-    function inputDateToDisplay(v) {
-      if (!v) return "";
-      if (v.includes("-")) {
-        const [y, m, d] = v.split("-");
-        return `${d}.${m}.${y}`;
-      }
-      return v;
-    }
-
-    function displayToSortable(v) {
-      if (!v) return "00000000";
-      if (v.includes("-")) return v.replaceAll("-", "");
-      const p = v.split(".");
-      if (p.length === 3) return `${p[2]}${p[1].padStart(2, "0")}${p[0].padStart(2, "0")}`;
-      return "00000000";
+      return `${String(t.getDate()).padStart(2,"0")}.${String(t.getMonth()+1).padStart(2,"0")}.${t.getFullYear()}`;
     }
 
     function escapeHtml(s) {
@@ -257,16 +234,11 @@
         .replaceAll("'", "&#039;");
     }
 
-    function dosyaAdTemizle(s) {
-      return String(s || "rapor").replace(/[\\/:*?"<>|]+/g, "_").replace(/\s+/g, "_");
-    }
-
-    function bytesToSize(bytes) {
-      const n = Number(bytes || 0);
-      if (!n) return "";
-      if (n < 1024) return `${n} B`;
-      if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
-      return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+    function parseTRDate(str) {
+      if (!str) return 0;
+      const m = String(str).match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+      if (!m) return 0;
+      return new Date(`${m[3]}-${m[2]}-${m[1]}T00:00:00`).getTime();
     }
 
     function kayitSayisiGuncelle() {
@@ -277,61 +249,35 @@
       document.getElementById("btn-tumunu-sil").style.display = n > 0 ? "inline-flex" : "none";
     }
 
-    function talepSecimleriniAl() {
-      const list = [];
-      if (document.getElementById("yardim_nakdi").checked) list.push("Nakdi Yardım");
-      if (document.getElementById("yardim_erzak").checked) list.push("Erzak");
-      if (document.getElementById("yardim_evdebakim").checked) list.push("Evde Bakım");
-      if (document.getElementById("yardim_diger_chk").checked) {
-        const diger = document.getElementById("yardim_diger_text").value.trim();
-        list.push(diger ? `Diğer: ${diger}` : "Diğer");
-      }
-      return list;
+    function seciliTalepGetir() {
+      const secimler = [...document.querySelectorAll('.talep-check:checked')].map(x => x.value);
+      const diger = document.getElementById('talep_diger').value.trim();
+      if (diger) secimler.push(diger);
+      return secimler;
     }
 
-    function talepYazdir(list) {
-      return (list || []).join(", ");
+    function talepMetni(d) {
+      const arr = Array.isArray(d.talep_liste) ? d.talep_liste.filter(Boolean) : [];
+      if (arr.length) return arr.join(", ");
+      return d.talep || "";
     }
 
-    function talepSecimleriniSetEt(list) {
-      const joined = Array.isArray(list) ? list.join(" | ") : String(list || "");
-      document.getElementById("yardim_nakdi").checked = joined.includes("Nakdi Yardım");
-      document.getElementById("yardim_erzak").checked = joined.includes("Erzak");
-      document.getElementById("yardim_evdebakim").checked = joined.includes("Evde Bakım");
-      const digerItem = Array.isArray(list) ? list.find(x => String(x).startsWith("Diğer")) : "";
-      document.getElementById("yardim_diger_chk").checked = !!digerItem;
-      document.getElementById("yardim_diger_text").value = digerItem ? String(digerItem).replace(/^Diğer:\s*/, "") : "";
-    }
-
-    function ekleriRender(ekler = []) {
-      const el = document.getElementById("ekler-mevcut");
-      if (!ekler.length) {
-        el.innerHTML = "";
-        return;
-      }
-      el.innerHTML = ekler.map((ek, i) => {
-        const link = ek.url && ek.url !== "#"
-          ? `<a href="${escapeHtml(ek.url)}" target="_blank" rel="noopener">${escapeHtml(ek.name || "Ek")}</a>`
-          : `<span style="font-size:13px;font-weight:600;color:#1a3a5c;">${escapeHtml(ek.name || "Yeni Ek")}</span>`;
-        const tip = String(ek.type || "").includes("pdf") ? "PDF" : "Görsel";
-        return `
-          <div class="ek-item">
-            <div>
-              ${link}
-              <small>${escapeHtml(tip)} ${ek.size ? `• ${escapeHtml(bytesToSize(ek.size))}` : ""}</small>
-            </div>
-            <button class="btn btn-red btn-sm" type="button" onclick="ekiKaldir(${i})">Kaldır</button>
-          </div>`;
-      }).join("");
+    function setTalep(d) {
+      const arr = Array.isArray(d.talep_liste) ? d.talep_liste : [];
+      document.querySelectorAll('.talep-check').forEach(ch => {
+        ch.checked = arr.includes(ch.value);
+      });
+      const bilinen = ["Nakdi Yardım", "Erzak", "Evde Bakım", "Diğer"];
+      const serbest = arr.filter(x => !bilinen.includes(x));
+      document.getElementById('talep_diger').value = serbest.join(', ');
     }
 
     function getForm() {
-      const talepListe = talepSecimleriniAl();
       return {
         ad_soyad: document.getElementById("ad_soyad").value.trim(),
         tarih: document.getElementById("tarih").value.trim(),
-        talepListe,
-        talep: talepYazdir(talepListe),
+        talep: talepMetni({ talep_liste: seciliTalepGetir() }),
+        talep_liste: seciliTalepGetir(),
         kisi: document.getElementById("kisi").value.trim(),
         gelir: document.getElementById("gelir").value.trim(),
         saglik: document.getElementById("saglik").value.trim(),
@@ -339,64 +285,62 @@
         sydv: document.getElementById("sydv").value.trim(),
         belediye: document.getElementById("belediye").value.trim(),
         diger: document.getElementById("diger").value.trim(),
-        ekler: mevcutEkler
+        dosya_link: document.getElementById("dosya_link").value.trim()
       };
     }
 
-    function setForm(d = {}) {
-      document.getElementById("ad_soyad").value = d.ad_soyad || "";
-      document.getElementById("tarih").value = d.tarih || bugunInput();
-      talepSecimleriniSetEt(d.talepListe || (d.talep ? d.talep.split(", ") : []));
-      document.getElementById("kisi").value = d.kisi || "";
-      document.getElementById("gelir").value = d.gelir || "";
-      document.getElementById("saglik").value = d.saglik || "";
-      document.getElementById("borc").value = d.borc || "";
-      document.getElementById("sydv").value = d.sydv || "";
-      document.getElementById("belediye").value = d.belediye || "";
-      document.getElementById("diger").value = d.diger || "";
-      mevcutEkler = Array.isArray(d.ekler) ? d.ekler : [];
-      document.getElementById("ekler").value = "";
-      ekleriRender(mevcutEkler);
+    function setForm(d) {
+      ["ad_soyad","tarih","kisi","gelir","saglik","borc","sydv","belediye","diger","dosya_link"].forEach(k => {
+        document.getElementById(k).value = d[k] || "";
+      });
+      setTalep(d || {});
+      document.getElementById('foto_dosya').value = '';
     }
 
-    function mesaj(metin, ok = true) {
+    function mesaj(metin, ok=true) {
       const el = document.getElementById("form-mesaj");
       el.textContent = metin;
       el.style.display = "block";
       el.style.background = ok ? "#d1fae5" : "#fef2f2";
       el.style.border = `1.5px solid ${ok ? "#6ee7b7" : "#fecaca"}`;
       el.style.color = ok ? "#065f46" : "#c0392b";
-      setTimeout(() => { el.style.display = "none"; }, 2500);
+      setTimeout(() => el.style.display = "none", 3000);
     }
 
-    async function dosyalariYukle(files) {
-      const sonuc = [];
-      for (const file of Array.from(files || [])) {
-        const temizAd = dosyaAdTemizle(file.name);
-        const yol = `rapor_ekleri/${Date.now()}_${Math.random().toString(36).slice(2, 8)}_${temizAd}`;
-        const ref = storageRef(storage, yol);
-        await uploadBytes(ref, file);
-        const url = await getDownloadURL(ref);
-        sonuc.push({ name: file.name, type: file.type, size: file.size, url, path: yol });
+    function uploadMesaj(metin, ok=true) {
+      const el = document.getElementById("upload-uyari");
+      if (!metin) {
+        el.style.display = 'none';
+        el.textContent = '';
+        return;
       }
-      return sonuc;
+      el.textContent = metin;
+      el.style.display = 'block';
+      el.style.background = ok ? '#eff6ff' : '#fff7ed';
+      el.style.border = `1.5px solid ${ok ? '#bfdbfe' : '#fed7aa'}`;
+      el.style.color = ok ? '#1d4ed8' : '#c2410c';
     }
 
-    async function storageEkleriniSil(ekler = []) {
-      for (const ek of ekler) {
-        if (!ek?.path) continue;
-        try {
-          await deleteObject(storageRef(storage, ek.path));
-        } catch (e) {
-          console.warn("Ek silinemedi", ek.path, e);
-        }
+    async function imgbbYukle(file) {
+      const fd = new FormData();
+      fd.append('image', file);
+      fd.append('name', file.name);
+      const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_KEY}`, {
+        method: 'POST',
+        body: fd
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data?.error?.message || 'Fotoğraf yüklenemedi');
       }
+      return data.data.url;
     }
 
     async function verileriYukle() {
-      const snap = await getDocs(query(raporlarRef));
+      const q = query(raporlarRef, orderBy("createdAt", "desc"));
+      const snap = await getDocs(q);
       cache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      cache.sort((a, b) => displayToSortable(b.tarih).localeCompare(displayToSortable(a.tarih)) || Number(b.updatedAt?.seconds || 0) - Number(a.updatedAt?.seconds || 0));
+      cache.sort((a, b) => parseTRDate(b.tarih) - parseTRDate(a.tarih) || ((b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)));
       kayitSayisiGuncelle();
       if (document.getElementById("page-liste").style.display !== "none") renderListe();
     }
@@ -405,27 +349,32 @@
       const form = getForm();
       if (!form.ad_soyad) { mesaj("Adı Soyadı zorunludur!", false); return; }
       try {
-        const secilenDosyalar = document.getElementById("ekler").files;
-        if (secilenDosyalar?.length) {
-          const yeniEkler = await dosyalariYukle(secilenDosyalar);
-          mevcutEkler = [...mevcutEkler, ...yeniEkler];
-          form.ekler = mevcutEkler;
+        const fotoInput = document.getElementById('foto_dosya');
+        const file = fotoInput.files?.[0];
+        if (file) {
+          uploadMesaj('Fotoğraf yükleniyor, lütfen bekleyin...');
+          const fotoLink = await imgbbYukle(file);
+          form.dosya_link = fotoLink;
+          document.getElementById('dosya_link').value = fotoLink;
+          uploadMesaj('Fotoğraf yüklendi, link kayda eklendi.');
+        } else {
+          uploadMesaj('');
         }
 
-        if (secili) {
-          await updateDoc(doc(db, "raporlar", secili), { ...form, ekler: mevcutEkler, updatedAt: serverTimestamp() });
+        if (secili !== null) {
+          const ref = doc(db, "raporlar", secili);
+          await updateDoc(ref, { ...form, updatedAt: serverTimestamp() });
           mesaj("✅ Güncellendi!");
         } else {
-          const ref = await addDoc(raporlarRef, { ...form, ekler: mevcutEkler, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+          const ref = await addDoc(raporlarRef, { ...form, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
           secili = ref.id;
           document.getElementById("kaydet-label").textContent = "Güncelle";
           mesaj("✅ Kaydedildi!");
         }
-        document.getElementById("ekler").value = "";
-        ekleriRender(mevcutEkler);
         await verileriYukle();
       } catch (err) {
         console.error(err);
+        uploadMesaj('');
         mesaj("Kayıt sırasında hata oluştu: " + err.message, false);
       }
     }
@@ -435,139 +384,40 @@
       const metin = [
         "=== GÖRÜŞME NOTLARI ===",
         f.ad_soyad ? `Ad Soyad: ${f.ad_soyad}` : "",
-        f.tarih ? `Görüşme Tarihi: ${inputDateToDisplay(f.tarih)}` : "",
-        f.talep ? `Talep Edilen Yardım: ${f.talep}` : "",
+        f.tarih ? `Görüşme Tarihi: ${f.tarih}` : "",
+        f.talep ? `Talep: ${f.talep}` : "",
         f.kisi ? `\nEvdeki kişiler:\n${f.kisi}` : "",
         f.gelir ? `\nGelir durumu:\n${f.gelir}` : "",
         f.saglik ? `\nSağlık durumu:\n${f.saglik}` : "",
-        f.borc ? `\nKonut / Borç:\n${f.borc}` : "",
-        f.sydv ? `\nSYDV:\n${f.sydv}` : "",
-        f.belediye ? `\nBelediye yardımları:\n${f.belediye}` : "",
-        f.diger ? `\nDiğer notlar:\n${f.diger}` : ""
+        f.borc ? `\nKonut/Borç:\n${f.borc}` : "",
+        f.sydv ? `\nSYDV: ${f.sydv}` : "",
+        `\nBelediye yardımları: ${f.belediye || "Yakın zamanda yardım almadığı gözlemlenmiştir."}`,
+        f.diger ? `\nDiğer notlar:\n${f.diger}` : "",
+        f.dosya_link ? `\nDosya Linki: ${f.dosya_link}` : "",
       ].filter(Boolean).join("\n");
 
       navigator.clipboard.writeText(metin).then(() => {
         const lbl = document.getElementById("kopya-label");
         lbl.textContent = "✅ Kopyalandı!";
-        setTimeout(() => { lbl.textContent = "📋 Notları Kopyala"; }, 2500);
+        setTimeout(() => lbl.textContent = "📋 Notları Kopyala", 2500);
       }).catch(() => {
         mesaj("Kopyalama başarısız oldu.", false);
       });
     }
 
-    async function createDocxBlob(data = null) {
-      const f = data || getForm();
-      if (!f.ad_soyad) throw new Error("Ad Soyad bulunamadı.");
-      if (!window.docx) throw new Error("DOCX kütüphanesi yüklenemedi.");
-
-      const { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, BorderStyle } = window.docx;
-      const satirlar = [
-        ["Adı Soyadı", f.ad_soyad || "-"],
-        ["Görüşme Tarihi", inputDateToDisplay(f.tarih) || "-"],
-        ["Talep Edilen Yardım", f.talep || "-"],
-        ["Evdeki Kişiler", f.kisi || "-"],
-        ["Çalışma / Gelir Durumu", f.gelir || "-"],
-        ["Sağlık / Engel", f.saglik || "-"],
-        ["Konut / Kira / Borç", f.borc || "-"],
-        ["SYDV Bilgisi", f.sydv || "-"],
-        ["Belediye Geçmiş Yardımları", f.belediye || "-"],
-        ["Diğer Notlar", f.diger || "-"]
-      ];
-
-      const children = [
-        new Paragraph({ text: "KUŞADASI BELEDİYESİ", heading: HeadingLevel.HEADING_1, alignment: AlignmentType.CENTER }),
-        new Paragraph({ text: "SİR - Görüşme Notu", heading: HeadingLevel.HEADING_2, alignment: AlignmentType.CENTER, spacing: { after: 300 } })
-      ];
-
-      satirlar.forEach(([etiket, deger]) => {
-        children.push(new Paragraph({
-          spacing: { before: 120, after: 80 },
-          border: { bottom: { color: "D9E2F1", style: BorderStyle.SINGLE, size: 4 } },
-          children: [new TextRun({ text: `${etiket}: `, bold: true, size: 24 }), new TextRun({ text: String(deger), size: 24 })]
-        }));
-      });
-
-      if (Array.isArray(f.ekler) && f.ekler.length) {
-        children.push(new Paragraph({ text: "Ekler", heading: HeadingLevel.HEADING_3, spacing: { before: 220, after: 80 } }));
-        f.ekler.forEach((ek) => {
-          children.push(new Paragraph({ text: `• ${ek.name || 'Ek'}`, spacing: { after: 30 } }));
-        });
-      }
-
-      const docFile = new Document({ sections: [{ properties: {}, children }] });
-      return await Packer.toBlob(docFile);
-    }
-
-    async function wordIndir(data = null) {
-      const f = data || getForm();
-      if (!f.ad_soyad) { mesaj("Word indirmek için önce ad soyad girin.", false); return; }
-      try {
-        const blob = await createDocxBlob(f);
-        saveAs(blob, `${dosyaAdTemizle(f.ad_soyad)}_gorusme_raporu.docx`);
-      } catch (err) {
-        console.error(err);
-        mesaj("DOCX oluşturulamadı: " + err.message, false);
-      }
-    }
-
-    async function seciliWordleriIndir() {
-      const secilenler = cache.filter(k => seciliKayitlar.has(k.id));
-      if (!secilenler.length) { mesaj("Önce kayıt seçin.", false); return; }
-      try {
-        const zip = new JSZip();
-        for (const kayit of secilenler) {
-          const blob = await createDocxBlob(kayit);
-          zip.file(`${dosyaAdTemizle(kayit.ad_soyad)}_gorusme_raporu.docx`, blob);
-        }
-        const zipBlob = await zip.generateAsync({ type: "blob" });
-        saveAs(zipBlob, `secili_raporlar_${Date.now()}.zip`);
-      } catch (err) {
-        console.error(err);
-        mesaj("Seçili Word dosyaları hazırlanamadı: " + err.message, false);
-      }
-    }
-
-    async function seciliEkleriIndir() {
-      const secilenler = cache.filter(k => seciliKayitlar.has(k.id));
-      if (!secilenler.length) { mesaj("Önce kayıt seçin.", false); return; }
-      try {
-        const zip = new JSZip();
-        let sayi = 0;
-        for (const kayit of secilenler) {
-          const folder = zip.folder(dosyaAdTemizle(kayit.ad_soyad || "kayit"));
-          for (const ek of (kayit.ekler || [])) {
-            if (!ek?.url) continue;
-            const res = await fetch(ek.url);
-            const blob = await res.blob();
-            folder.file(ek.name || `ek_${++sayi}`, blob);
-            sayi += 1;
-          }
-        }
-        if (!sayi) { mesaj("Seçili kayıtlarda indirilecek ek bulunamadı.", false); return; }
-        const zipBlob = await zip.generateAsync({ type: "blob" });
-        saveAs(zipBlob, `secili_ekler_${Date.now()}.zip`);
-      } catch (err) {
-        console.error(err);
-        mesaj("Ekler indirilemedi: " + err.message, false);
-      }
-    }
-
-    function ekiKaldir(index) {
-      mevcutEkler.splice(index, 1);
-      ekleriRender(mevcutEkler);
-    }
-
     function yeniForm() {
       secili = null;
-      setForm({ tarih: bugunInput(), talepListe: [], ekler: [] });
+      setForm({ tarih: bugun(), talep_liste: [] });
       document.getElementById("kaydet-label").textContent = "Kaydet";
+      uploadMesaj('');
       gosterTab("form");
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
 
     async function ac(id) {
       try {
-        const snap = await getDoc(doc(db, "raporlar", id));
+        const ref = doc(db, "raporlar", id);
+        const snap = await getDoc(ref);
         if (!snap.exists()) { mesaj("Kayıt bulunamadı.", false); return; }
         secili = id;
         setForm(snap.data());
@@ -582,13 +432,11 @@
 
     async function sil(id) {
       try {
-        const rec = cache.find(x => x.id === id);
         await deleteDoc(doc(db, "raporlar", id));
-        await storageEkleriniSil(rec?.ekler || []);
-        seciliKayitlar.delete(id);
+        secilenler.delete(id);
         if (secili === id) {
           secili = null;
-          setForm({ tarih: bugunInput(), talepListe: [], ekler: [] });
+          setForm({ tarih: bugun(), talep_liste: [] });
           document.getElementById("kaydet-label").textContent = "Kaydet";
         }
         await verileriYukle();
@@ -602,12 +450,10 @@
       if (!confirm("Tüm kayıtlar silinsin mi?")) return;
       try {
         const snap = await getDocs(raporlarRef);
-        const kayitlar = snap.docs.map(d => ({ id: d.id, ...d.data(), ref: d.ref }));
-        await Promise.all(kayitlar.map(k => deleteDoc(k.ref)));
-        for (const kayit of kayitlar) await storageEkleriniSil(kayit.ekler || []);
+        await Promise.all(snap.docs.map(d => deleteDoc(d.ref)));
         secili = null;
-        seciliKayitlar.clear();
-        setForm({ tarih: bugunInput(), talepListe: [], ekler: [] });
+        secilenler.clear();
+        setForm({ tarih: bugun(), talep_liste: [] });
         document.getElementById("kaydet-label").textContent = "Kaydet";
         await verileriYukle();
       } catch (err) {
@@ -616,65 +462,107 @@
       }
     }
 
-    function secimDegistir(id, checked) {
-      if (checked) seciliKayitlar.add(id);
-      else seciliKayitlar.delete(id);
+    function toggleSecim(id, checked) {
+      if (checked) secilenler.add(id); else secilenler.delete(id);
     }
 
-    function tumunuSecToggle() {
-      const hepsiSecili = cache.length > 0 && cache.every(k => seciliKayitlar.has(k.id));
-      if (hepsiSecili) seciliKayitlar.clear();
-      else cache.forEach(k => seciliKayitlar.add(k.id));
+    function tumunuSec() {
+      cache.forEach(k => secilenler.add(k.id));
       renderListe();
+    }
+
+    function secimiTemizle() {
+      secilenler.clear();
+      renderListe();
+    }
+
+    async function secilenDosyalariIndir() {
+      const secilenKayitlar = cache.filter(k => secilenler.has(k.id) && k.dosya_link);
+      if (!secilenKayitlar.length) {
+        alert('İndirilecek seçili dosya bulunamadı.');
+        return;
+      }
+      const zip = new JSZip();
+      let basarili = 0;
+      for (const kayit of secilenKayitlar) {
+        try {
+          const res = await fetch(kayit.dosya_link);
+          if (!res.ok) throw new Error('Dosya alınamadı');
+          const blob = await res.blob();
+          const ext = blob.type.includes('png') ? '.png' : blob.type.includes('jpeg') ? '.jpg' : blob.type.includes('webp') ? '.webp' : '.bin';
+          const ad = (kayit.ad_soyad || 'dosya').replace(/[\\/:*?"<>|]/g, '_');
+          zip.file(`${ad}${ext}`, blob);
+          basarili++;
+        } catch (e) {
+          console.warn('İndirilemeyen dosya:', kayit.dosya_link, e);
+        }
+      }
+      if (!basarili) {
+        alert('Seçilen dosyalar indirilemedi. Linkleri tek tek açmayı deneyin.');
+        return;
+      }
+      const content = await zip.generateAsync({ type: 'blob' });
+      saveAs(content, 'secilen_dosyalar.zip');
+    }
+
+    async function wordIndir(k) {
+      try {
+        const { Document, Packer, Paragraph, TextRun, HeadingLevel } = window.docx;
+        const belge = new Document({
+          sections: [{
+            properties: {},
+            children: [
+              new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun({ text: 'KUŞADASI BELEDİYESİ', bold: true })] }),
+              new Paragraph({ heading: HeadingLevel.HEADING_2, children: [new TextRun({ text: 'SİR - Görüşme Notu', bold: true })] }),
+              new Paragraph(''),
+              new Paragraph({ children: [new TextRun({ text: 'Ad Soyad: ', bold: true }), new TextRun(k.ad_soyad || '')] }),
+              new Paragraph({ children: [new TextRun({ text: 'Görüşme Tarihi: ', bold: true }), new TextRun(k.tarih || '')] }),
+              new Paragraph({ children: [new TextRun({ text: 'Talep Edilen Yardım: ', bold: true }), new TextRun(talepMetni(k))] }),
+              new Paragraph({ children: [new TextRun({ text: 'Evdeki Kişiler: ', bold: true }), new TextRun(k.kisi || '')] }),
+              new Paragraph({ children: [new TextRun({ text: 'Çalışma / Gelir Durumu: ', bold: true }), new TextRun(k.gelir || '')] }),
+              new Paragraph({ children: [new TextRun({ text: 'Sağlık / Engel: ', bold: true }), new TextRun(k.saglik || '')] }),
+              new Paragraph({ children: [new TextRun({ text: 'Konut / Kira / Borç: ', bold: true }), new TextRun(k.borc || '')] }),
+              new Paragraph({ children: [new TextRun({ text: 'SYDV Bilgisi: ', bold: true }), new TextRun(k.sydv || '')] }),
+              new Paragraph({ children: [new TextRun({ text: 'Belediye Geçmiş Yardımları: ', bold: true }), new TextRun(k.belediye || '')] }),
+              new Paragraph({ children: [new TextRun({ text: 'Diğer Notlar: ', bold: true }), new TextRun(k.diger || '')] }),
+              new Paragraph({ children: [new TextRun({ text: 'Dosya Linki: ', bold: true }), new TextRun(k.dosya_link || '')] })
+            ]
+          }]
+        });
+        const blob = await Packer.toBlob(belge);
+        const ad = (k.ad_soyad || 'rapor').replace(/[\\/:*?"<>|]/g, '_');
+        saveAs(blob, `${ad}_Rapor.docx`);
+      } catch (err) {
+        console.error(err);
+        alert('Word dosyası oluşturulamadı: ' + err.message);
+      }
     }
 
     function renderListe() {
       kayitSayisiGuncelle();
+      const liste = cache;
       const el = document.getElementById("liste-icerik");
-      if (!cache.length) {
+      if (liste.length === 0) {
         el.innerHTML = `<div class="bos-mesaj"><div style="font-size:40px;margin-bottom:12px">📋</div><div style="font-weight:600">Henüz kayıt yok</div><div style="font-size:13px;margin-top:6px">Form sekmesinden görüşme notu ekleyin</div></div>`;
         return;
       }
-
-      el.innerHTML = cache.map(k => {
-        const ekBilgisi = k.ekler && k.ekler.length ? `&nbsp;&nbsp;📎 ${k.ekler.length} ek` : "";
-        const ilkKisiSatiri = k.kisi ? escapeHtml(String(k.kisi).split("\n")[0]) : "";
-        const eklerSatiri = k.ekler && k.ekler.length
-          ? `<div class="kayit-not">Ekler: ${k.ekler.map(ek => `<a href="${escapeHtml(ek.url)}" target="_blank" rel="noopener">${escapeHtml(ek.name)}</a>`).join(" • ")}</div>`
-          : "";
-        return `
-          <div class="kayit-kart ${secili === k.id ? "secili" : ""}">
-            <div class="kayit-ust">
-              <div class="record-main">
-                <input class="secim-cb" type="checkbox" ${seciliKayitlar.has(k.id) ? "checked" : ""} onchange="secimDegistir('${k.id}', this.checked)" />
-                <div class="record-text">
-                  <div class="kayit-ad">${escapeHtml(k.ad_soyad)}</div>
-                  <div class="kayit-alt">${k.tarih ? `📅 ${escapeHtml(inputDateToDisplay(k.tarih))}` : ""}${k.talep ? `&nbsp;&nbsp;📌 ${escapeHtml(k.talep)}` : ""}${ekBilgisi}</div>
-                </div>
-              </div>
-              <div class="kayit-btns">
-                <button class="btn btn-navy btn-sm" type="button" onclick="ac('${k.id}')">✏️ Aç</button>
-                <button class="btn btn-light btn-sm" type="button" onclick="wordIndirById('${k.id}')">📄 Word</button>
-                <button class="btn btn-light btn-sm" type="button" onclick="ekleriAc('${k.id}')">📎 Ekler</button>
-                <button class="btn btn-red btn-sm" type="button" onclick="sil('${k.id}')">🗑️</button>
-              </div>
+      el.innerHTML = liste.map(k => `
+        <div class="kayit-kart ${secili === k.id ? 'secili' : ''}">
+          <div class="kayit-ust">
+            <div>
+              <label class="secim-label"><input type="checkbox" ${secilenler.has(k.id) ? 'checked' : ''} onchange="toggleSecim('${k.id}', this.checked)"> Seç</label>
+              <div class="kayit-ad">${escapeHtml(k.ad_soyad)}</div>
+              <div class="kayit-alt">${k.tarih ? "📅 " + escapeHtml(k.tarih) : ""}${talepMetni(k) ? "&nbsp;&nbsp;📌 " + escapeHtml(talepMetni(k)) : ""}</div>
+              ${k.dosya_link ? `<div class="kayit-alt dosya-link">📎 <a href="${escapeHtml(k.dosya_link)}" target="_blank" rel="noopener noreferrer">Dosyayı Aç</a></div>` : ''}
             </div>
-            ${ilkKisiSatiri ? `<div class="kayit-not">${ilkKisiSatiri}</div>` : ""}
-            ${eklerSatiri}
-          </div>`;
-      }).join("");
-    }
-
-    async function wordIndirById(id) {
-      const rec = cache.find(x => x.id === id);
-      if (!rec) { mesaj("Kayıt bulunamadı.", false); return; }
-      await wordIndir(rec);
-    }
-
-    function ekleriAc(id) {
-      const rec = cache.find(x => x.id === id);
-      if (!rec || !rec.ekler?.length) { mesaj("Bu kayıtta ek bulunmuyor.", false); return; }
-      rec.ekler.forEach(ek => window.open(ek.url, "_blank"));
+            <div class="kayit-btns">
+              <button class="btn btn-navy btn-sm" onclick="ac('${k.id}')">✏️ Aç</button>
+              <button class="btn btn-green btn-sm" onclick='wordIndir(${JSON.stringify(k).replace(/'/g, "&#39;")})'>📄 Word</button>
+              <button class="btn btn-red btn-sm" onclick="sil('${k.id}')">🗑️</button>
+            </div>
+          </div>
+          ${k.kisi ? `<div class="kayit-not">${escapeHtml(String(k.kisi).split("\n")[0])}</div>` : ""}
+        </div>`).join("");
     }
 
     function gosterTab(tab) {
@@ -686,21 +574,24 @@
     }
 
     function girisYap() {
-      const v = document.getElementById("giris-sifre").value;
-      const hata = document.getElementById("giris-hata");
-      if (v === GIRIS_SIFRESI) {
-        sessionStorage.setItem("sir_logged_in", "1");
-        document.getElementById("giris-ekrani").style.display = "none";
-        document.getElementById("uygulama").style.display = "block";
-      } else {
-        hata.style.display = "block";
+      const sifre = document.getElementById('login-password').value;
+      if (sifre !== SIFRE) {
+        const el = document.getElementById('login-mesaj');
+        el.textContent = 'Şifre yanlış.';
+        el.style.display = 'block';
+        el.style.background = '#fef2f2';
+        el.style.border = '1.5px solid #fecaca';
+        el.style.color = '#c0392b';
+        return;
       }
+      sessionStorage.setItem('sir_login_ok', '1');
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
     }
 
-    function girisDurumunuUygula() {
-      const ok = sessionStorage.getItem("sir_logged_in") === "1";
-      document.getElementById("giris-ekrani").style.display = ok ? "none" : "flex";
-      document.getElementById("uygulama").style.display = ok ? "block" : "none";
+    if (sessionStorage.getItem('sir_login_ok') === '1') {
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
     }
 
     window.kaydet = kaydet;
@@ -710,28 +601,14 @@
     window.sil = sil;
     window.tumunuSil = tumunuSil;
     window.gosterTab = gosterTab;
-    window.wordIndir = wordIndir;
-    window.wordIndirById = wordIndirById;
-    window.ekleriAc = ekleriAc;
-    window.ekiKaldir = ekiKaldir;
-    window.secimDegistir = secimDegistir;
-    window.tumunuSecToggle = tumunuSecToggle;
-    window.seciliWordleriIndir = seciliWordleriIndir;
-    window.seciliEkleriIndir = seciliEkleriIndir;
     window.girisYap = girisYap;
+    window.tumunuSec = tumunuSec;
+    window.secimiTemizle = secimiTemizle;
+    window.toggleSecim = toggleSecim;
+    window.wordIndir = wordIndir;
+    window.secilenDosyalariIndir = secilenDosyalariIndir;
 
-    document.getElementById("tarih").value = bugunInput();
-    document.getElementById("ekler").addEventListener("change", (e) => {
-      const secilenler = Array.from(e.target.files || []);
-      const onizleme = [...mevcutEkler, ...secilenler.map(f => ({ name: f.name, type: f.type, size: f.size, url: "#" }))];
-      ekleriRender(onizleme);
-    });
-    document.getElementById("giris-sifre").addEventListener("keydown", (e) => {
-      if (e.key === "Enter") girisYap();
-    });
-
-    girisDurumunuUygula();
-    setForm({ tarih: bugunInput(), talepListe: [], ekler: [] });
+    document.getElementById("tarih").value = bugun();
     verileriYukle();
   </script>
 </body>

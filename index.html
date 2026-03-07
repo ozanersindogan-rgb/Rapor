@@ -191,6 +191,7 @@
     </div>
   </main>
 
+  <script src="https://unpkg.com/html-docx-js@0.3.1/dist/html-docx.js"></script>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getFirestore, collection, addDoc, updateDoc, deleteDoc, getDocs, getDoc, doc, query, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -208,7 +209,7 @@
     const db = getFirestore(app);
     const raporlarRef = collection(db, "raporlar");
 
-    const GIRIS_SIFRESI = "kusadasi2026";
+    const GIRIS_SIFRESI = "ozanersin5752";
     let secili = null;
     let cache = [];
 
@@ -403,17 +404,28 @@
 
     function wordIndir(data = null) {
       const f = data || getForm();
-      if (!f.ad_soyad) { mesaj("Word indirmek için önce ad soyad girin.", false); return; }
+      if (!f.ad_soyad) { mesaj("DOCX indirmek için önce ad soyad girin.", false); return; }
       const icerik = wordIcerikOlustur(f);
-      const blob = new Blob(['\ufeff', icerik], { type: 'application/msword' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${dosyaAdTemizle(f.ad_soyad)}_gorusme_raporu.doc`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
+      try {
+        if (!window.htmlDocx || typeof window.htmlDocx.asBlob !== "function") {
+          throw new Error("DOCX kütüphanesi yüklenemedi");
+        }
+        const blob = window.htmlDocx.asBlob(icerik, {
+          orientation: 'portrait',
+          margins: { top: 720, right: 720, bottom: 720, left: 720, header: 360, footer: 360, gutter: 0 }
+        });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${dosyaAdTemizle(f.ad_soyad)}_gorusme_raporu.docx`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      } catch (err) {
+        console.error(err);
+        mesaj("DOCX oluşturulamadı: " + err.message, false);
+      }
     }
 
     function yeniForm() {

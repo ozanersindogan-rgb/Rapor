@@ -17,7 +17,6 @@
     main { max-width: 720px; margin: 0 auto; padding: 24px 16px 60px; }
     .section { background: white; border-radius: 12px; margin-bottom: 16px; box-shadow: 0 1px 6px rgba(0,0,0,.07); overflow: hidden; }
     .section-title { background: #1a3a5c; color: white; padding: 10px 18px; font-weight: 600; font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; }
-    .section-title span { opacity: .5; font-weight: 400; }
     .section-body { padding: 16px 18px; display: flex; flex-direction: column; gap: 12px; }
     .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     label { font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; display: block; }
@@ -25,7 +24,7 @@
     input:focus, textarea:focus { border-color: #2d5f8a; }
     textarea { resize: vertical; min-height: 72px; line-height: 1.7; }
     #ad_soyad { font-size: 16px; font-weight: 600; }
-    .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
+    .btn-row, .liste-btns, .kayit-btns { display: flex; gap: 10px; flex-wrap: wrap; }
     .btn { border: none; border-radius: 10px; padding: 11px 22px; font-size: 13px; font-family: inherit; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
     .btn-navy { background: linear-gradient(135deg, #1a3a5c, #2d5f8a); color: white; }
     .btn-green { background: linear-gradient(135deg, #2d7a2d, #3d9a3d); color: white; }
@@ -35,36 +34,34 @@
     .mesaj { border-radius: 10px; padding: 10px 16px; font-size: 13px; font-weight: 600; margin-top: 12px; display: none; }
     .kayit-kart { background: white; border-radius: 12px; margin-bottom: 12px; box-shadow: 0 1px 6px rgba(0,0,0,.07); overflow: hidden; border: 2px solid transparent; }
     .kayit-kart.secili { border-color: #2d5f8a; }
-    .kayit-ust { padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+    .kayit-ust { padding: 14px 18px; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
     .kayit-ad { font-weight: 700; font-size: 15px; color: #1a3a5c; }
     .kayit-alt { font-size: 12px; color: #64748b; margin-top: 3px; }
     .kayit-not { padding: 10px 18px 12px; font-size: 12px; color: #64748b; border-top: 1px solid #f4f6f9; }
-    .kayit-btns { display: flex; gap: 8px; flex-wrap: wrap; }
     .bos-mesaj { background: white; border-radius: 12px; padding: 40px; text-align: center; color: #64748b; box-shadow: 0 1px 6px rgba(0,0,0,.07); }
     .liste-ust { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
     .liste-baslik { font-family: Georgia, serif; font-size: 18px; color: #1a3a5c; font-weight: 600; }
-    .liste-btns { display: flex; gap: 8px; flex-wrap: wrap; }
     .yardim-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; }
     .check-item { border: 1.5px solid #d1d9e0; border-radius: 10px; padding: 10px 12px; display: flex; align-items: center; gap: 8px; background: #fff; }
     .check-item input { width: auto; margin: 0; }
     .check-item span { font-size: 13px; font-weight: 600; color: #1e2a35; }
-    .helper { font-size: 12px; color: #64748b; }
-    .giris-ekrani {
-      position: fixed; inset: 0; background: linear-gradient(135deg, rgba(26,58,92,.96), rgba(45,95,138,.96));
-      display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 20px;
-    }
-    .giris-kutu {
-      width: 100%; max-width: 380px; background: white; border-radius: 16px; padding: 24px; box-shadow: 0 10px 30px rgba(0,0,0,.25);
-    }
+    .helper, .sirali-bilgi { font-size: 12px; color: #64748b; }
+    .ekler-listesi { display: flex; flex-direction: column; gap: 8px; }
+    .ek-item { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid #d1d9e0; border-radius: 10px; background: #fff; }
+    .ek-item a { color: #1a3a5c; text-decoration: none; font-size: 13px; font-weight: 600; }
+    .ek-item small { color: #64748b; display: block; margin-top: 2px; }
+    .secim-cb { width: 18px; height: 18px; accent-color: #1a3a5c; }
+    .giris-ekrani { position: fixed; inset: 0; background: linear-gradient(135deg, rgba(26,58,92,.96), rgba(45,95,138,.96)); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 20px; }
+    .giris-kutu { width: 100%; max-width: 380px; background: white; border-radius: 16px; padding: 24px; box-shadow: 0 10px 30px rgba(0,0,0,.25); }
     .giris-kutu h2 { font-family: Georgia, serif; color: #1a3a5c; margin-bottom: 8px; }
     .giris-kutu p { color: #64748b; font-size: 13px; margin-bottom: 16px; }
     .giris-hata { display: none; margin-top: 10px; font-size: 13px; font-weight: 600; color: #c0392b; }
-    .sirali-bilgi { font-size: 12px; color: #64748b; }
+    .record-main { display: flex; gap: 12px; width: 100%; }
+    .record-text { flex: 1; min-width: 0; }
     @media (max-width: 640px) {
       .row2, .yardim-grid { grid-template-columns: 1fr; }
-      .kayit-ust { flex-direction: column; align-items: flex-start; }
-      .kayit-btns { width: 100%; }
-      .kayit-btns .btn { flex: 1; justify-content: center; }
+      .kayit-ust { flex-direction: column; }
+      .kayit-btns .btn, .liste-btns .btn { flex: 1; justify-content: center; }
       header { padding: 12px 14px; }
       header h1 { font-size: 17px; }
       .tab-btn { padding: 8px 10px; }
@@ -76,11 +73,11 @@
     <div class="giris-kutu">
       <div class="title-small" style="color:#64748b; margin-bottom:6px;">Kuşadası Belediyesi</div>
       <h2>SİR – Güvenli Giriş</h2>
-      <p>Üyelik gerekmez. Belirlediğiniz tek şifre ile sisteme giriş yapılır.</p>
+      <p>Üyelik gerekmez. Tek şifre ile giriş yapılır.</p>
       <label for="giris-sifre">Giriş Şifresi</label>
       <input type="password" id="giris-sifre" placeholder="Şifre giriniz" />
       <div class="btn-row" style="margin-top:14px;">
-        <button class="btn btn-navy" onclick="girisYap()">🔓 Giriş Yap</button>
+        <button class="btn btn-navy" type="button" onclick="girisYap()">🔓 Giriş Yap</button>
       </div>
       <div id="giris-hata" class="giris-hata">Şifre hatalı.</div>
     </div>
@@ -165,11 +162,17 @@
             <label for="diger">Diğer Notlar</label>
             <textarea id="diger"></textarea>
           </div>
+          <div>
+            <label for="ekler">Fotoğraf / PDF Eki</label>
+            <input id="ekler" type="file" accept="image/*,application/pdf" multiple />
+            <div class="helper" style="margin-top:8px;">Fotoğraf veya PDF ekleyebilirsin. Kayıtla birlikte yüklenir.</div>
+            <div id="ekler-mevcut" class="ekler-listesi" style="margin-top:10px;"></div>
+          </div>
           <div class="btn-row">
-            <button class="btn btn-green" onclick="kaydet()">💾 <span id="kaydet-label">Kaydet</span></button>
-            <button class="btn btn-light" onclick="kopyala()"><span id="kopya-label">📋 Notları Kopyala</span></button>
-            <button class="btn btn-navy" onclick="wordIndir()">📄 Word İndir</button>
-            <button class="btn btn-light" onclick="yeniForm()">➕ Yeni</button>
+            <button class="btn btn-green" type="button" onclick="kaydet()">💾 <span id="kaydet-label">Kaydet</span></button>
+            <button class="btn btn-light" type="button" onclick="kopyala()"><span id="kopya-label">📋 Notları Kopyala</span></button>
+            <button class="btn btn-navy" type="button" onclick="wordIndir()">📄 Word İndir</button>
+            <button class="btn btn-light" type="button" onclick="yeniForm()">➕ Yeni</button>
           </div>
           <div id="form-mesaj" class="mesaj"></div>
         </div>
@@ -183,8 +186,11 @@
           <div class="sirali-bilgi">Görüşme tarihine göre en yeni üstte sıralanır.</div>
         </div>
         <div class="liste-btns">
-          <button id="btn-tumunu-sil" class="btn btn-red btn-sm" onclick="tumunuSil()" style="display:none;">🗑️ Tümünü Sil</button>
-          <button class="btn btn-light btn-sm" onclick="yeniForm()">➕ Yeni Görüşme</button>
+          <button class="btn btn-light btn-sm" type="button" onclick="tumunuSecToggle()">☑️ Tümünü Seç / Kaldır</button>
+          <button class="btn btn-light btn-sm" type="button" onclick="seciliWordleriIndir()">📦 Seçili Word ZIP</button>
+          <button class="btn btn-light btn-sm" type="button" onclick="seciliEkleriIndir()">🗂️ Seçili Ekler ZIP</button>
+          <button id="btn-tumunu-sil" class="btn btn-red btn-sm" type="button" onclick="tumunuSil()" style="display:none;">🗑️ Tümünü Sil</button>
+          <button class="btn btn-light btn-sm" type="button" onclick="yeniForm()">➕ Yeni Görüşme</button>
         </div>
       </div>
       <div id="liste-icerik"></div>
@@ -192,10 +198,13 @@
   </main>
 
   <script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getFirestore, collection, addDoc, updateDoc, deleteDoc, getDocs, getDoc, doc, query, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getStorage, ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyB9tYLbLRiY9HEfJQLQcyI5aij6wY2Qw_E",
@@ -208,26 +217,24 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+    const storage = getStorage(app);
     const raporlarRef = collection(db, "raporlar");
 
     const GIRIS_SIFRESI = "ozanersin5752";
     let secili = null;
     let cache = [];
+    let mevcutEkler = [];
+    const seciliKayitlar = new Set();
 
     function bugunInput() {
       const t = new Date();
-      return `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,"0")}-${String(t.getDate()).padStart(2,"0")}`;
-    }
-
-    function bugunGosterim() {
-      const t = new Date();
-      return `${String(t.getDate()).padStart(2,"0")}.${String(t.getMonth()+1).padStart(2,"0")}.${t.getFullYear()}`;
+      return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`;
     }
 
     function inputDateToDisplay(v) {
       if (!v) return "";
       if (v.includes("-")) {
-        const [y,m,d] = v.split("-");
+        const [y, m, d] = v.split("-");
         return `${d}.${m}.${y}`;
       }
       return v;
@@ -237,7 +244,7 @@
       if (!v) return "00000000";
       if (v.includes("-")) return v.replaceAll("-", "");
       const p = v.split(".");
-      if (p.length === 3) return `${p[2]}${p[1].padStart(2,'0')}${p[0].padStart(2,'0')}`;
+      if (p.length === 3) return `${p[2]}${p[1].padStart(2, "0")}${p[0].padStart(2, "0")}`;
       return "00000000";
     }
 
@@ -248,6 +255,18 @@
         .replaceAll(">", "&gt;")
         .replaceAll('"', "&quot;")
         .replaceAll("'", "&#039;");
+    }
+
+    function dosyaAdTemizle(s) {
+      return String(s || "rapor").replace(/[\\/:*?"<>|]+/g, "_").replace(/\s+/g, "_");
+    }
+
+    function bytesToSize(bytes) {
+      const n = Number(bytes || 0);
+      if (!n) return "";
+      if (n < 1024) return `${n} B`;
+      if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+      return `${(n / (1024 * 1024)).toFixed(1)} MB`;
     }
 
     function kayitSayisiGuncelle() {
@@ -284,23 +303,47 @@
       document.getElementById("yardim_diger_text").value = digerItem ? String(digerItem).replace(/^Diğer:\s*/, "") : "";
     }
 
+    function ekleriRender(ekler = []) {
+      const el = document.getElementById("ekler-mevcut");
+      if (!ekler.length) {
+        el.innerHTML = "";
+        return;
+      }
+      el.innerHTML = ekler.map((ek, i) => {
+        const link = ek.url && ek.url !== "#"
+          ? `<a href="${escapeHtml(ek.url)}" target="_blank" rel="noopener">${escapeHtml(ek.name || "Ek")}</a>`
+          : `<span style="font-size:13px;font-weight:600;color:#1a3a5c;">${escapeHtml(ek.name || "Yeni Ek")}</span>`;
+        const tip = String(ek.type || "").includes("pdf") ? "PDF" : "Görsel";
+        return `
+          <div class="ek-item">
+            <div>
+              ${link}
+              <small>${escapeHtml(tip)} ${ek.size ? `• ${escapeHtml(bytesToSize(ek.size))}` : ""}</small>
+            </div>
+            <button class="btn btn-red btn-sm" type="button" onclick="ekiKaldir(${i})">Kaldır</button>
+          </div>`;
+      }).join("");
+    }
+
     function getForm() {
+      const talepListe = talepSecimleriniAl();
       return {
         ad_soyad: document.getElementById("ad_soyad").value.trim(),
         tarih: document.getElementById("tarih").value.trim(),
-        talepListe: talepSecimleriniAl(),
-        talep: talepYazdir(talepSecimleriniAl()),
+        talepListe,
+        talep: talepYazdir(talepListe),
         kisi: document.getElementById("kisi").value.trim(),
         gelir: document.getElementById("gelir").value.trim(),
         saglik: document.getElementById("saglik").value.trim(),
         borc: document.getElementById("borc").value.trim(),
         sydv: document.getElementById("sydv").value.trim(),
         belediye: document.getElementById("belediye").value.trim(),
-        diger: document.getElementById("diger").value.trim()
+        diger: document.getElementById("diger").value.trim(),
+        ekler: mevcutEkler
       };
     }
 
-    function setForm(d) {
+    function setForm(d = {}) {
       document.getElementById("ad_soyad").value = d.ad_soyad || "";
       document.getElementById("tarih").value = d.tarih || bugunInput();
       talepSecimleriniSetEt(d.talepListe || (d.talep ? d.talep.split(", ") : []));
@@ -311,6 +354,9 @@
       document.getElementById("sydv").value = d.sydv || "";
       document.getElementById("belediye").value = d.belediye || "";
       document.getElementById("diger").value = d.diger || "";
+      mevcutEkler = Array.isArray(d.ekler) ? d.ekler : [];
+      document.getElementById("ekler").value = "";
+      ekleriRender(mevcutEkler);
     }
 
     function mesaj(metin, ok = true) {
@@ -320,14 +366,37 @@
       el.style.background = ok ? "#d1fae5" : "#fef2f2";
       el.style.border = `1.5px solid ${ok ? "#6ee7b7" : "#fecaca"}`;
       el.style.color = ok ? "#065f46" : "#c0392b";
-      setTimeout(() => el.style.display = "none", 2500);
+      setTimeout(() => { el.style.display = "none"; }, 2500);
+    }
+
+    async function dosyalariYukle(files) {
+      const sonuc = [];
+      for (const file of Array.from(files || [])) {
+        const temizAd = dosyaAdTemizle(file.name);
+        const yol = `rapor_ekleri/${Date.now()}_${Math.random().toString(36).slice(2, 8)}_${temizAd}`;
+        const ref = storageRef(storage, yol);
+        await uploadBytes(ref, file);
+        const url = await getDownloadURL(ref);
+        sonuc.push({ name: file.name, type: file.type, size: file.size, url, path: yol });
+      }
+      return sonuc;
+    }
+
+    async function storageEkleriniSil(ekler = []) {
+      for (const ek of ekler) {
+        if (!ek?.path) continue;
+        try {
+          await deleteObject(storageRef(storage, ek.path));
+        } catch (e) {
+          console.warn("Ek silinemedi", ek.path, e);
+        }
+      }
     }
 
     async function verileriYukle() {
-      const q = query(raporlarRef);
-      const snap = await getDocs(q);
+      const snap = await getDocs(query(raporlarRef));
       cache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      cache.sort((a,b) => displayToSortable(b.tarih).localeCompare(displayToSortable(a.tarih)) || String(b.updatedAt?.seconds || 0).localeCompare(String(a.updatedAt?.seconds || 0)));
+      cache.sort((a, b) => displayToSortable(b.tarih).localeCompare(displayToSortable(a.tarih)) || Number(b.updatedAt?.seconds || 0) - Number(a.updatedAt?.seconds || 0));
       kayitSayisiGuncelle();
       if (document.getElementById("page-liste").style.display !== "none") renderListe();
     }
@@ -336,16 +405,24 @@
       const form = getForm();
       if (!form.ad_soyad) { mesaj("Adı Soyadı zorunludur!", false); return; }
       try {
-        if (secili !== null) {
-          const ref = doc(db, "raporlar", secili);
-          await updateDoc(ref, { ...form, updatedAt: serverTimestamp() });
+        const secilenDosyalar = document.getElementById("ekler").files;
+        if (secilenDosyalar?.length) {
+          const yeniEkler = await dosyalariYukle(secilenDosyalar);
+          mevcutEkler = [...mevcutEkler, ...yeniEkler];
+          form.ekler = mevcutEkler;
+        }
+
+        if (secili) {
+          await updateDoc(doc(db, "raporlar", secili), { ...form, ekler: mevcutEkler, updatedAt: serverTimestamp() });
           mesaj("✅ Güncellendi!");
         } else {
-          const ref = await addDoc(raporlarRef, { ...form, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+          const ref = await addDoc(raporlarRef, { ...form, ekler: mevcutEkler, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
           secili = ref.id;
           document.getElementById("kaydet-label").textContent = "Güncelle";
           mesaj("✅ Kaydedildi!");
         }
+        document.getElementById("ekler").value = "";
+        ekleriRender(mevcutEkler);
         await verileriYukle();
       } catch (err) {
         console.error(err);
@@ -364,7 +441,7 @@
         f.gelir ? `\nGelir durumu:\n${f.gelir}` : "",
         f.saglik ? `\nSağlık durumu:\n${f.saglik}` : "",
         f.borc ? `\nKonut / Borç:\n${f.borc}` : "",
-        f.sydv ? `\nSYDV: ${f.sydv}` : "",
+        f.sydv ? `\nSYDV:\n${f.sydv}` : "",
         f.belediye ? `\nBelediye yardımları:\n${f.belediye}` : "",
         f.diger ? `\nDiğer notlar:\n${f.diger}` : ""
       ].filter(Boolean).join("\n");
@@ -372,27 +449,18 @@
       navigator.clipboard.writeText(metin).then(() => {
         const lbl = document.getElementById("kopya-label");
         lbl.textContent = "✅ Kopyalandı!";
-        setTimeout(() => lbl.textContent = "📋 Notları Kopyala", 2500);
+        setTimeout(() => { lbl.textContent = "📋 Notları Kopyala"; }, 2500);
       }).catch(() => {
         mesaj("Kopyalama başarısız oldu.", false);
       });
     }
 
-    async function wordIndir(data = null) {
+    async function createDocxBlob(data = null) {
       const f = data || getForm();
-      if (!f.ad_soyad) { mesaj("Word indirmek için önce ad soyad girin.", false); return; }
-      if (!window.docx) { mesaj("DOCX kütüphanesi yüklenemedi.", false); return; }
+      if (!f.ad_soyad) throw new Error("Ad Soyad bulunamadı.");
+      if (!window.docx) throw new Error("DOCX kütüphanesi yüklenemedi.");
 
-      const {
-        Document,
-        Packer,
-        Paragraph,
-        TextRun,
-        HeadingLevel,
-        AlignmentType,
-        BorderStyle,
-      } = window.docx;
-
+      const { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, BorderStyle } = window.docx;
       const satirlar = [
         ["Adı Soyadı", f.ad_soyad || "-"],
         ["Görüşme Tarihi", inputDateToDisplay(f.tarih) || "-"],
@@ -403,67 +471,95 @@
         ["Konut / Kira / Borç", f.borc || "-"],
         ["SYDV Bilgisi", f.sydv || "-"],
         ["Belediye Geçmiş Yardımları", f.belediye || "-"],
-        ["Diğer Notlar", f.diger || "-"],
+        ["Diğer Notlar", f.diger || "-"]
       ];
 
       const children = [
-        new Paragraph({
-          text: "KUŞADASI BELEDİYESİ",
-          heading: HeadingLevel.HEADING_1,
-          alignment: AlignmentType.CENTER,
-          thematicBreak: false,
-        }),
-        new Paragraph({
-          text: "SİR - Görüşme Notu",
-          heading: HeadingLevel.HEADING_2,
-          alignment: AlignmentType.CENTER,
-          spacing: { after: 300 },
-        }),
+        new Paragraph({ text: "KUŞADASI BELEDİYESİ", heading: HeadingLevel.HEADING_1, alignment: AlignmentType.CENTER }),
+        new Paragraph({ text: "SİR - Görüşme Notu", heading: HeadingLevel.HEADING_2, alignment: AlignmentType.CENTER, spacing: { after: 300 } })
       ];
 
       satirlar.forEach(([etiket, deger]) => {
-        children.push(
-          new Paragraph({
-            spacing: { before: 120, after: 80 },
-            border: {
-              bottom: { color: "D9E2F1", style: BorderStyle.SINGLE, size: 4 },
-            },
-            children: [
-              new TextRun({ text: etiket + ": ", bold: true, size: 24 }),
-              new TextRun({ text: String(deger), size: 24 }),
-            ],
-          })
-        );
+        children.push(new Paragraph({
+          spacing: { before: 120, after: 80 },
+          border: { bottom: { color: "D9E2F1", style: BorderStyle.SINGLE, size: 4 } },
+          children: [new TextRun({ text: `${etiket}: `, bold: true, size: 24 }), new TextRun({ text: String(deger), size: 24 })]
+        }));
       });
 
-      const docFile = new Document({
-        sections: [
-          {
-            properties: {},
-            children,
-          },
-        ],
-      });
+      if (Array.isArray(f.ekler) && f.ekler.length) {
+        children.push(new Paragraph({ text: "Ekler", heading: HeadingLevel.HEADING_3, spacing: { before: 220, after: 80 } }));
+        f.ekler.forEach((ek) => {
+          children.push(new Paragraph({ text: `• ${ek.name || 'Ek'}`, spacing: { after: 30 } }));
+        });
+      }
 
+      const docFile = new Document({ sections: [{ properties: {}, children }] });
+      return await Packer.toBlob(docFile);
+    }
+
+    async function wordIndir(data = null) {
+      const f = data || getForm();
+      if (!f.ad_soyad) { mesaj("Word indirmek için önce ad soyad girin.", false); return; }
       try {
-        const blob = await Packer.toBlob(docFile);
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `${dosyaAdTemizle(f.ad_soyad)}_gorusme_raporu.docx`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(url);
+        const blob = await createDocxBlob(f);
+        saveAs(blob, `${dosyaAdTemizle(f.ad_soyad)}_gorusme_raporu.docx`);
       } catch (err) {
         console.error(err);
         mesaj("DOCX oluşturulamadı: " + err.message, false);
       }
     }
 
+    async function seciliWordleriIndir() {
+      const secilenler = cache.filter(k => seciliKayitlar.has(k.id));
+      if (!secilenler.length) { mesaj("Önce kayıt seçin.", false); return; }
+      try {
+        const zip = new JSZip();
+        for (const kayit of secilenler) {
+          const blob = await createDocxBlob(kayit);
+          zip.file(`${dosyaAdTemizle(kayit.ad_soyad)}_gorusme_raporu.docx`, blob);
+        }
+        const zipBlob = await zip.generateAsync({ type: "blob" });
+        saveAs(zipBlob, `secili_raporlar_${Date.now()}.zip`);
+      } catch (err) {
+        console.error(err);
+        mesaj("Seçili Word dosyaları hazırlanamadı: " + err.message, false);
+      }
+    }
+
+    async function seciliEkleriIndir() {
+      const secilenler = cache.filter(k => seciliKayitlar.has(k.id));
+      if (!secilenler.length) { mesaj("Önce kayıt seçin.", false); return; }
+      try {
+        const zip = new JSZip();
+        let sayi = 0;
+        for (const kayit of secilenler) {
+          const folder = zip.folder(dosyaAdTemizle(kayit.ad_soyad || "kayit"));
+          for (const ek of (kayit.ekler || [])) {
+            if (!ek?.url) continue;
+            const res = await fetch(ek.url);
+            const blob = await res.blob();
+            folder.file(ek.name || `ek_${++sayi}`, blob);
+            sayi += 1;
+          }
+        }
+        if (!sayi) { mesaj("Seçili kayıtlarda indirilecek ek bulunamadı.", false); return; }
+        const zipBlob = await zip.generateAsync({ type: "blob" });
+        saveAs(zipBlob, `secili_ekler_${Date.now()}.zip`);
+      } catch (err) {
+        console.error(err);
+        mesaj("Ekler indirilemedi: " + err.message, false);
+      }
+    }
+
+    function ekiKaldir(index) {
+      mevcutEkler.splice(index, 1);
+      ekleriRender(mevcutEkler);
+    }
+
     function yeniForm() {
       secili = null;
-      setForm({ tarih: bugunInput(), talepListe: [] });
+      setForm({ tarih: bugunInput(), talepListe: [], ekler: [] });
       document.getElementById("kaydet-label").textContent = "Kaydet";
       gosterTab("form");
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -471,8 +567,7 @@
 
     async function ac(id) {
       try {
-        const ref = doc(db, "raporlar", id);
-        const snap = await getDoc(ref);
+        const snap = await getDoc(doc(db, "raporlar", id));
         if (!snap.exists()) { mesaj("Kayıt bulunamadı.", false); return; }
         secili = id;
         setForm(snap.data());
@@ -487,10 +582,13 @@
 
     async function sil(id) {
       try {
+        const rec = cache.find(x => x.id === id);
         await deleteDoc(doc(db, "raporlar", id));
+        await storageEkleriniSil(rec?.ekler || []);
+        seciliKayitlar.delete(id);
         if (secili === id) {
           secili = null;
-          setForm({ tarih: bugunInput(), talepListe: [] });
+          setForm({ tarih: bugunInput(), talepListe: [], ekler: [] });
           document.getElementById("kaydet-label").textContent = "Kaydet";
         }
         await verileriYukle();
@@ -504,9 +602,12 @@
       if (!confirm("Tüm kayıtlar silinsin mi?")) return;
       try {
         const snap = await getDocs(raporlarRef);
-        await Promise.all(snap.docs.map(d => deleteDoc(d.ref)));
+        const kayitlar = snap.docs.map(d => ({ id: d.id, ...d.data(), ref: d.ref }));
+        await Promise.all(kayitlar.map(k => deleteDoc(k.ref)));
+        for (const kayit of kayitlar) await storageEkleriniSil(kayit.ekler || []);
         secili = null;
-        setForm({ tarih: bugunInput(), talepListe: [] });
+        seciliKayitlar.clear();
+        setForm({ tarih: bugunInput(), talepListe: [], ekler: [] });
         document.getElementById("kaydet-label").textContent = "Kaydet";
         await verileriYukle();
       } catch (err) {
@@ -515,35 +616,65 @@
       }
     }
 
+    function secimDegistir(id, checked) {
+      if (checked) seciliKayitlar.add(id);
+      else seciliKayitlar.delete(id);
+    }
+
+    function tumunuSecToggle() {
+      const hepsiSecili = cache.length > 0 && cache.every(k => seciliKayitlar.has(k.id));
+      if (hepsiSecili) seciliKayitlar.clear();
+      else cache.forEach(k => seciliKayitlar.add(k.id));
+      renderListe();
+    }
+
     function renderListe() {
       kayitSayisiGuncelle();
-      const liste = cache;
       const el = document.getElementById("liste-icerik");
-      if (liste.length === 0) {
+      if (!cache.length) {
         el.innerHTML = `<div class="bos-mesaj"><div style="font-size:40px;margin-bottom:12px">📋</div><div style="font-weight:600">Henüz kayıt yok</div><div style="font-size:13px;margin-top:6px">Form sekmesinden görüşme notu ekleyin</div></div>`;
         return;
       }
-      el.innerHTML = liste.map(k => `
-        <div class="kayit-kart ${secili === k.id ? 'secili' : ''}">
-          <div class="kayit-ust">
-            <div>
-              <div class="kayit-ad">${escapeHtml(k.ad_soyad)}</div>
-              <div class="kayit-alt">${k.tarih ? "📅 " + escapeHtml(inputDateToDisplay(k.tarih)) : ""}${k.talep ? "&nbsp;&nbsp;📌 " + escapeHtml(k.talep) : ""}</div>
+
+      el.innerHTML = cache.map(k => {
+        const ekBilgisi = k.ekler && k.ekler.length ? `&nbsp;&nbsp;📎 ${k.ekler.length} ek` : "";
+        const ilkKisiSatiri = k.kisi ? escapeHtml(String(k.kisi).split("\n")[0]) : "";
+        const eklerSatiri = k.ekler && k.ekler.length
+          ? `<div class="kayit-not">Ekler: ${k.ekler.map(ek => `<a href="${escapeHtml(ek.url)}" target="_blank" rel="noopener">${escapeHtml(ek.name)}</a>`).join(" • ")}</div>`
+          : "";
+        return `
+          <div class="kayit-kart ${secili === k.id ? "secili" : ""}">
+            <div class="kayit-ust">
+              <div class="record-main">
+                <input class="secim-cb" type="checkbox" ${seciliKayitlar.has(k.id) ? "checked" : ""} onchange="secimDegistir('${k.id}', this.checked)" />
+                <div class="record-text">
+                  <div class="kayit-ad">${escapeHtml(k.ad_soyad)}</div>
+                  <div class="kayit-alt">${k.tarih ? `📅 ${escapeHtml(inputDateToDisplay(k.tarih))}` : ""}${k.talep ? `&nbsp;&nbsp;📌 ${escapeHtml(k.talep)}` : ""}${ekBilgisi}</div>
+                </div>
+              </div>
+              <div class="kayit-btns">
+                <button class="btn btn-navy btn-sm" type="button" onclick="ac('${k.id}')">✏️ Aç</button>
+                <button class="btn btn-light btn-sm" type="button" onclick="wordIndirById('${k.id}')">📄 Word</button>
+                <button class="btn btn-light btn-sm" type="button" onclick="ekleriAc('${k.id}')">📎 Ekler</button>
+                <button class="btn btn-red btn-sm" type="button" onclick="sil('${k.id}')">🗑️</button>
+              </div>
             </div>
-            <div class="kayit-btns">
-              <button class="btn btn-navy btn-sm" onclick="ac('${k.id}')">✏️ Aç</button>
-              <button class="btn btn-light btn-sm" onclick="wordIndirById('${k.id}')">📄 Word</button>
-              <button class="btn btn-red btn-sm" onclick="sil('${k.id}')">🗑️</button>
-            </div>
-          </div>
-          ${k.kisi ? `<div class="kayit-not">${escapeHtml(String(k.kisi).split("\n")[0])}</div>` : ""}
-        </div>`).join("");
+            ${ilkKisiSatiri ? `<div class="kayit-not">${ilkKisiSatiri}</div>` : ""}
+            ${eklerSatiri}
+          </div>`;
+      }).join("");
     }
 
     async function wordIndirById(id) {
       const rec = cache.find(x => x.id === id);
       if (!rec) { mesaj("Kayıt bulunamadı.", false); return; }
-      wordIndir(rec);
+      await wordIndir(rec);
+    }
+
+    function ekleriAc(id) {
+      const rec = cache.find(x => x.id === id);
+      if (!rec || !rec.ekler?.length) { mesaj("Bu kayıtta ek bulunmuyor.", false); return; }
+      rec.ekler.forEach(ek => window.open(ek.url, "_blank"));
     }
 
     function gosterTab(tab) {
@@ -581,14 +712,26 @@
     window.gosterTab = gosterTab;
     window.wordIndir = wordIndir;
     window.wordIndirById = wordIndirById;
+    window.ekleriAc = ekleriAc;
+    window.ekiKaldir = ekiKaldir;
+    window.secimDegistir = secimDegistir;
+    window.tumunuSecToggle = tumunuSecToggle;
+    window.seciliWordleriIndir = seciliWordleriIndir;
+    window.seciliEkleriIndir = seciliEkleriIndir;
     window.girisYap = girisYap;
 
     document.getElementById("tarih").value = bugunInput();
+    document.getElementById("ekler").addEventListener("change", (e) => {
+      const secilenler = Array.from(e.target.files || []);
+      const onizleme = [...mevcutEkler, ...secilenler.map(f => ({ name: f.name, type: f.type, size: f.size, url: "#" }))];
+      ekleriRender(onizleme);
+    });
     document.getElementById("giris-sifre").addEventListener("keydown", (e) => {
       if (e.key === "Enter") girisYap();
     });
 
     girisDurumunuUygula();
+    setForm({ tarih: bugunInput(), talepListe: [], ekler: [] });
     verileriYukle();
   </script>
 </body>

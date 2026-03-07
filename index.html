@@ -191,7 +191,8 @@
     </div>
   </main>
 
-  <script src="https://unpkg.com/html-docx-js@0.3.1/dist/html-docx.js"></script>
+  <script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
+
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getFirestore, collection, addDoc, updateDoc, deleteDoc, getDocs, getDoc, doc, query, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -377,51 +378,83 @@
       });
     }
 
-    function wordIcerikOlustur(f) {
-      return `
-        <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
-        <head><meta charset="utf-8"><title>Görüşme Raporu</title></head>
-        <body>
-          <h2 style="color:#1a3a5c;">Kuşadası Belediyesi</h2>
-          <h3>SİR – Görüşme Notu</h3>
-          <p><strong>Adı Soyadı:</strong> ${escapeHtml(f.ad_soyad)}</p>
-          <p><strong>Görüşme Tarihi:</strong> ${escapeHtml(inputDateToDisplay(f.tarih))}</p>
-          <p><strong>Talep Edilen Yardım:</strong> ${escapeHtml(f.talep || "-")}</p>
-          <p><strong>Evdeki Kişiler:</strong><br>${escapeHtml(f.kisi || "-").replaceAll("\n","<br>")}</p>
-          <p><strong>Çalışma / Gelir Durumu:</strong><br>${escapeHtml(f.gelir || "-").replaceAll("\n","<br>")}</p>
-          <p><strong>Sağlık / Engel:</strong><br>${escapeHtml(f.saglik || "-").replaceAll("\n","<br>")}</p>
-          <p><strong>Konut / Kira / Borç:</strong><br>${escapeHtml(f.borc || "-").replaceAll("\n","<br>")}</p>
-          <p><strong>SYDV Bilgisi:</strong><br>${escapeHtml(f.sydv || "-").replaceAll("\n","<br>")}</p>
-          <p><strong>Belediye Geçmiş Yardımları:</strong><br>${escapeHtml(f.belediye || "-").replaceAll("\n","<br>")}</p>
-          <p><strong>Diğer Notlar:</strong><br>${escapeHtml(f.diger || "-").replaceAll("\n","<br>")}</p>
-        </body>
-        </html>`;
-    }
-
-    function dosyaAdTemizle(v) {
-      return String(v || "rapor").replace(/[\\/:*?"<>|]/g, " ").trim() || "rapor";
-    }
-
-    function wordIndir(data = null) {
+    async function wordIndir(data = null) {
       const f = data || getForm();
-      if (!f.ad_soyad) { mesaj("DOCX indirmek için önce ad soyad girin.", false); return; }
-      const icerik = wordIcerikOlustur(f);
+      if (!f.ad_soyad) { mesaj("Word indirmek için önce ad soyad girin.", false); return; }
+      if (!window.docx) { mesaj("DOCX kütüphanesi yüklenemedi.", false); return; }
+
+      const {
+        Document,
+        Packer,
+        Paragraph,
+        TextRun,
+        HeadingLevel,
+        AlignmentType,
+        BorderStyle,
+      } = window.docx;
+
+      const satirlar = [
+        ["Adı Soyadı", f.ad_soyad || "-"],
+        ["Görüşme Tarihi", inputDateToDisplay(f.tarih) || "-"],
+        ["Talep Edilen Yardım", f.talep || "-"],
+        ["Evdeki Kişiler", f.kisi || "-"],
+        ["Çalışma / Gelir Durumu", f.gelir || "-"],
+        ["Sağlık / Engel", f.saglik || "-"],
+        ["Konut / Kira / Borç", f.borc || "-"],
+        ["SYDV Bilgisi", f.sydv || "-"],
+        ["Belediye Geçmiş Yardımları", f.belediye || "-"],
+        ["Diğer Notlar", f.diger || "-"],
+      ];
+
+      const children = [
+        new Paragraph({
+          text: "KUŞADASI BELEDİYESİ",
+          heading: HeadingLevel.HEADING_1,
+          alignment: AlignmentType.CENTER,
+          thematicBreak: false,
+        }),
+        new Paragraph({
+          text: "SİR - Görüşme Notu",
+          heading: HeadingLevel.HEADING_2,
+          alignment: AlignmentType.CENTER,
+          spacing: { after: 300 },
+        }),
+      ];
+
+      satirlar.forEach(([etiket, deger]) => {
+        children.push(
+          new Paragraph({
+            spacing: { before: 120, after: 80 },
+            border: {
+              bottom: { color: "D9E2F1", style: BorderStyle.SINGLE, size: 4 },
+            },
+            children: [
+              new TextRun({ text: etiket + ": ", bold: true, size: 24 }),
+              new TextRun({ text: String(deger), size: 24 }),
+            ],
+          })
+        );
+      });
+
+      const docFile = new Document({
+        sections: [
+          {
+            properties: {},
+            children,
+          },
+        ],
+      });
+
       try {
-        if (!window.htmlDocx || typeof window.htmlDocx.asBlob !== "function") {
-          throw new Error("DOCX kütüphanesi yüklenemedi");
-        }
-        const blob = window.htmlDocx.asBlob(icerik, {
-          orientation: 'portrait',
-          margins: { top: 720, right: 720, bottom: 720, left: 720, header: 360, footer: 360, gutter: 0 }
-        });
+        const blob = await Packer.toBlob(docFile);
         const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
+        const a = document.createElement("a");
         a.href = url;
         a.download = `${dosyaAdTemizle(f.ad_soyad)}_gorusme_raporu.docx`;
         document.body.appendChild(a);
         a.click();
         a.remove();
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        URL.revokeObjectURL(url);
       } catch (err) {
         console.error(err);
         mesaj("DOCX oluşturulamadı: " + err.message, false);

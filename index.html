@@ -9,6 +9,7 @@
 <script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <style>
 :root {
@@ -38,32 +39,299 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* ── PIN EKRANI ── */
-#pin-ekran {
-  position:fixed; inset:0; z-index:9999;
-  display:flex; align-items:center; justify-content:center;
-  background:linear-gradient(135deg,#1a2236 0%,#0f1620 100%);
+/* ── GİRİŞ ── */
+.login-wrap {
+  min-height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(160deg, var(--ink) 0%, var(--ink3) 100%);
+  padding: 20px;
+  position: relative; overflow: hidden;
 }
-.pin-kart {
-  width:290px; background:#1e2a3a; border-radius:20px;
-  box-shadow:0 20px 60px rgba(0,0,0,.5); overflow:hidden; text-align:center;
+.login-wrap::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse 80% 60% at 60% 40%, rgba(201,168,76,.12) 0%, transparent 70%);
+  pointer-events: none;
 }
-.pin-ust {
-  background:linear-gradient(135deg,#1a2236,#243350);
-  padding:24px 20px 18px; border-bottom:1px solid rgba(201,168,76,.15);
+.login-card {
+  width: 100%; max-width: 420px;
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(201,168,76,.25);
+  border-radius: 24px;
+  backdrop-filter: blur(20px);
+  overflow: hidden;
+  box-shadow: 0 32px 80px rgba(0,0,0,.4);
+  position: relative; z-index: 1;
 }
-.pin-ust .ikon { font-size:36px; margin-bottom:8px; }
-.pin-ust h2 { color:#fff; font-size:17px; font-weight:600; margin:0 0 4px; }
-.pin-ust p  { color:rgba(201,168,76,.7); font-size:10px; letter-spacing:2px; text-transform:uppercase; margin:0; }
-.pin-alti { padding:22px 20px; }
-.pin-noktalar { display:flex; justify-content:center; gap:14px; margin-bottom:20px; }
-.pin-nokta { width:14px; height:14px; border-radius:50%; background:rgba(255,255,255,.1); border:2px solid rgba(255,255,255,.2); transition:all .15s; }
-.pin-nokta.dolu { background:#c9a84c; border-color:#c9a84c; }
-.pin-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:10px; }
-.pin-btn { background:rgba(255,255,255,.07); border:1.5px solid rgba(255,255,255,.1); border-radius:12px; color:#fff; font-size:20px; font-weight:500; padding:15px; cursor:pointer; transition:all .15s; user-select:none; -webkit-tap-highlight-color:transparent; }
-.pin-btn:active { transform:scale(.91); background:rgba(201,168,76,.2); }
-.pin-btn.sil { font-size:18px; color:rgba(255,255,255,.45); }
-.pin-hata { color:#f87171; font-size:12px; min-height:18px; }
+.login-head {
+  padding: 32px 28px 24px;
+  border-bottom: 1px solid rgba(201,168,76,.15);
+  text-align: center;
+}
+.login-emblem {
+  width: 64px; height: 64px; margin: 0 auto 16px;
+  background: linear-gradient(135deg, rgba(201,168,76,.2), rgba(201,168,76,.08));
+  border: 1.5px solid rgba(201,168,76,.4);
+  border-radius: 20px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px;
+}
+.login-head .sub { font-size: 10px; letter-spacing: 3px; color: rgba(201,168,76,.7); text-transform: uppercase; margin-bottom: 6px; }
+.login-head h1 { font-family: 'Playfair Display', serif; font-size: 22px; color: white; font-weight: 500; }
+.login-body { padding: 24px 28px 28px; }
+.login-body p { color: rgba(255,255,255,.5); font-size: 13px; line-height: 1.6; margin-bottom: 20px; }
+.login-field label { display: block; font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: rgba(201,168,76,.8); margin-bottom: 8px; }
+.login-field input {
+  width: 100%; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.15);
+  border-radius: 12px; padding: 14px 16px; font-size: 15px; font-family: inherit;
+  color: white; outline: none; transition: border .2s;
+  letter-spacing: 2px;
+}
+.login-field input:focus { border-color: rgba(201,168,76,.6); }
+.login-field input::placeholder { opacity: .35; letter-spacing: 0; }
+.btn-login {
+  width: 100%; margin-top: 16px;
+  background: linear-gradient(135deg, var(--gold), #a07830);
+  color: var(--ink); border: none; border-radius: 12px; padding: 15px;
+  font-size: 14px; font-family: inherit; font-weight: 700; cursor: pointer;
+  letter-spacing: .5px; transition: opacity .15s, transform .1s;
+}
+.btn-login:hover { opacity: .92; transform: translateY(-1px); }
+#login-mesaj { margin-top: 12px; font-size: 13px; color: #f87171; text-align: center; display: none; }
+
+/* ── HEADER ── */
+header {
+  background: linear-gradient(135deg, var(--ink) 0%, var(--ink2) 100%);
+  padding: 0 20px;
+  position: sticky; top: 0; z-index: 200;
+  box-shadow: 0 2px 20px rgba(0,0,0,.25);
+  border-bottom: 1px solid rgba(201,168,76,.2);
+}
+.header-inner {
+  max-width: 800px; margin: 0 auto;
+  display: flex; align-items: center; justify-content: space-between;
+  height: 60px; gap: 12px;
+}
+.brand { display: flex; align-items: center; gap: 12px; }
+.brand-icon {
+  width: 36px; height: 36px;
+  background: linear-gradient(135deg, rgba(201,168,76,.25), rgba(201,168,76,.1));
+  border: 1px solid rgba(201,168,76,.35);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; flex-shrink: 0;
+}
+.brand-text .sup { font-size: 9px; letter-spacing: 2.5px; color: rgba(201,168,76,.65); text-transform: uppercase; }
+.brand-text h1 { font-family: 'Playfair Display', serif; font-size: 16px; color: white; font-weight: 500; line-height: 1.1; }
+.nav { display: flex; gap: 4px; }
+.nav-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 7px 14px; border-radius: 10px; border: none; cursor: pointer;
+  font-size: 12px; font-weight: 600; font-family: inherit;
+  background: transparent; color: rgba(255,255,255,.55);
+  transition: background .15s, color .15s;
+}
+.nav-btn.active { background: rgba(201,168,76,.18); color: var(--gold2); }
+.nav-btn:hover:not(.active) { background: rgba(255,255,255,.07); color: rgba(255,255,255,.8); }
+.nav-badge {
+  background: var(--gold); color: var(--ink);
+  border-radius: 999px; padding: 1px 7px; font-size: 10px; font-weight: 800;
+}
+
+/* ── LAYOUT ── */
+.app-body { max-width: 800px; margin: 0 auto; padding: 24px 16px 80px; }
+
+/* ── KARTLAR ── */
+.card {
+  background: var(--paper);
+  border-radius: var(--r);
+  margin-bottom: 14px;
+  box-shadow: var(--shadow);
+  border: 1px solid rgba(221,228,236,.7);
+  overflow: hidden;
+  transition: box-shadow .2s;
+}
+.card-head {
+  background: linear-gradient(135deg, var(--ink) 0%, var(--ink2) 100%);
+  padding: 13px 20px;
+  display: flex; align-items: center; gap: 10px;
+  border-bottom: 1px solid rgba(201,168,76,.15);
+}
+.card-head-icon {
+  width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0;
+  background: rgba(201,168,76,.18); border: 1px solid rgba(201,168,76,.25);
+  display: flex; align-items: center; justify-content: center; font-size: 14px;
+}
+.card-head-title { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: rgba(255,255,255,.9); }
+.card-head-sub { font-size: 11px; color: rgba(255,255,255,.38); font-weight: 400; margin-left: auto; }
+.card-body { padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+
+/* ── FORM ELEMANLARI ── */
+.field-label {
+  display: block; font-size: 11px; font-weight: 700; letter-spacing: .8px;
+  text-transform: uppercase; color: var(--muted); margin-bottom: 7px;
+}
+input[type=text], input[type=url], input[type=password], textarea {
+  width: 100%; border: 1.5px solid var(--line); border-radius: var(--r2);
+  padding: 12px 14px; font-size: 14px; font-family: inherit;
+  color: var(--ink); background: #fafcff; outline: none;
+  transition: border .15s, box-shadow .15s;
+}
+input:focus, textarea:focus {
+  border-color: var(--ink3);
+  box-shadow: 0 0 0 4px rgba(42,74,107,.08);
+  background: white;
+}
+textarea { resize: vertical; min-height: 84px; line-height: 1.7; }
+#ad_soyad { font-size: 17px; font-weight: 700; letter-spacing: .3px; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.grid3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; }
+
+/* ── CHECKBOX KARTI ── */
+.check-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.check-item {
+  position: relative; cursor: pointer;
+  border: 1.5px solid var(--line); border-radius: 12px; padding: 11px 13px;
+  display: flex; align-items: center; gap: 9px;
+  background: #fafcff; transition: border .15s, box-shadow .15s, background .15s;
+  user-select: none;
+}
+.check-item input { position: absolute; opacity: 0; width: 0; height: 0; }
+.check-box {
+  width: 18px; height: 18px; border-radius: 5px; flex-shrink: 0;
+  border: 2px solid var(--line); background: white;
+  display: flex; align-items: center; justify-content: center;
+  transition: border .15s, background .15s;
+}
+.check-item:has(input:checked) { border-color: var(--ink3); background: #f0f6ff; box-shadow: 0 0 0 3px rgba(42,74,107,.07); }
+.check-item:has(input:checked) .check-box { background: var(--ink2); border-color: var(--ink2); }
+.check-item:has(input:checked) .check-box::after { content: '✓'; color: white; font-size: 11px; font-weight: 800; }
+.check-item span { font-size: 13px; font-weight: 600; color: var(--ink); }
+
+/* ── RADIO TOGGLE ── */
+.radio-toggle { display: flex; gap: 0; border-radius: 12px; overflow: hidden; border: 1.5px solid var(--line); }
+.radio-toggle label {
+  flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 10px 8px; cursor: pointer; font-size: 13px; font-weight: 600;
+  background: #fafcff; color: var(--muted);
+  transition: background .15s, color .15s;
+  border: none;
+}
+.radio-toggle label:not(:last-child) { border-right: 1.5px solid var(--line); }
+.radio-toggle label:has(input:checked) { background: var(--ink2); color: white; }
+.radio-toggle input { display: none; }
+
+/* ── DETAY KUTU ── */
+.detay-kutu {
+  background: linear-gradient(180deg, #f5f9ff, #eef4fc);
+  border: 1.5px dashed rgba(42,74,107,.25);
+  border-radius: 12px; padding: 14px;
+  margin-top: 10px;
+  animation: slideDown .2s ease;
+}
+@keyframes slideDown { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+
+/* ── DOSYA ALANI ── */
+.file-zone {
+  border: 2px dashed var(--line); border-radius: 14px; padding: 20px;
+  text-align: center; background: #fafcff; cursor: pointer;
+  transition: border .15s, background .15s;
+}
+.file-zone:hover { border-color: var(--ink3); background: #f0f6ff; }
+.file-zone-icon { font-size: 28px; margin-bottom: 8px; }
+.file-zone p { font-size: 13px; color: var(--muted); }
+.file-zone small { font-size: 11px; color: #aab; }
+#foto_dosya { display: none; }
+.file-pill {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 8px 14px; background: #eef6ff; border: 1px solid #c0d8f5;
+  border-radius: 999px; font-size: 12px; color: var(--ink2); font-weight: 600;
+  margin-top: 10px;
+}
+.preview-card { border: 1px solid var(--line); border-radius: 14px; overflow: hidden; margin-top: 12px; }
+.preview-head { padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; background: #f7faff; border-bottom: 1px solid var(--line); }
+.preview-head b { font-size: 13px; color: var(--ink2); }
+.preview-badge { background: #def7ec; color: #0f6b4e; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+.preview-canvas-wrap { padding: 12px; display: flex; justify-content: center; background: #f9fbfd; }
+#dosya-preview { max-width: 100%; border-radius: 10px; }
+
+/* ── UYARI / MESAJ ── */
+.flash {
+  border-radius: 12px; padding: 12px 16px; font-size: 13px; font-weight: 600;
+  display: none; margin-top: 10px;
+  animation: fadeIn .2s ease;
+}
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+/* ── BUTONLAR ── */
+.btn-row { display: flex; gap: 10px; flex-wrap: wrap; padding-top: 4px; }
+.btn {
+  border: none; border-radius: 12px; padding: 12px 20px;
+  font-size: 13px; font-family: inherit; font-weight: 700; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 7px;
+  transition: transform .1s, opacity .15s, box-shadow .15s;
+  letter-spacing: .2px;
+}
+.btn:hover { transform: translateY(-1px); }
+.btn:active { transform: translateY(0); }
+.btn-primary { background: linear-gradient(135deg, var(--ink), var(--ink2)); color: white; box-shadow: 0 6px 18px rgba(13,27,42,.18); }
+.btn-gold { background: linear-gradient(135deg, var(--gold), #a07830); color: var(--ink); box-shadow: 0 6px 18px rgba(201,168,76,.25); }
+.btn-success { background: linear-gradient(135deg, #0f6b4e, #1a8c66); color: white; box-shadow: 0 6px 18px rgba(15,107,78,.18); }
+.btn-ghost { background: white; color: var(--ink2); border: 1.5px solid var(--line); }
+.btn-danger { background: #fff4f3; color: var(--red); border: 1.5px solid #ffd3cf; }
+.btn-sm { padding: 8px 14px; font-size: 12px; border-radius: 10px; }
+
+/* ── LİSTE ── */
+.liste-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; flex-wrap: wrap; gap: 12px; }
+.liste-title { font-family: 'Playfair Display', serif; font-size: 22px; color: var(--ink); }
+.liste-sub { font-size: 12px; color: var(--muted); margin-top: 3px; }
+.toolbar { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+.search-box { flex: 1; min-width: 200px; }
+
+.kayit {
+  background: white; border-radius: var(--r); margin-bottom: 12px;
+  border: 1.5px solid transparent;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  transition: border .15s, box-shadow .15s;
+}
+.kayit:hover { box-shadow: var(--shadow2); }
+.kayit.secili { border-color: var(--ink3); }
+.kayit-top {
+  padding: 16px 18px;
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;
+}
+.kayit-meta { flex: 1; min-width: 0; }
+.kayit-select { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; cursor: pointer; font-size: 12px; color: var(--muted); font-weight: 600; }
+.kayit-select input { width: auto; accent-color: var(--ink2); cursor: pointer; }
+.kayit-ad { font-size: 16px; font-weight: 800; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kayit-info { font-size: 12px; color: var(--muted); margin-top: 4px; line-height: 1.5; }
+.kayit-dosya { font-size: 12px; color: var(--ink3); margin-top: 4px; }
+.kayit-dosya a { color: var(--ink3); font-weight: 600; }
+.kayit-actions { display: flex; gap: 7px; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
+.kayit-preview { padding: 10px 18px 14px; font-size: 12px; color: var(--muted); border-top: 1px solid #f0f4f8; background: #fafcff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.bos { padding: 48px 24px; text-align: center; color: var(--muted); }
+.bos-icon { font-size: 48px; margin-bottom: 14px; opacity: .4; }
+
+/* ── HIZLI ŞABLON ── */
+.sablon-bar {
+  background: linear-gradient(135deg, var(--ink), var(--ink2));
+  border-radius: var(--r); padding: 16px 20px; margin-bottom: 14px;
+  border: 1px solid rgba(201,168,76,.2);
+}
+.sablon-bar-title { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: rgba(201,168,76,.8); margin-bottom: 10px; }
+.sablon-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip {
+  padding: 7px 14px; border-radius: 999px; font-size: 12px; font-weight: 700;
+  cursor: pointer; border: 1px solid rgba(255,255,255,.2); color: rgba(255,255,255,.8);
+  background: rgba(255,255,255,.08); transition: background .15s, color .15s;
+}
+.chip:hover { background: rgba(201,168,76,.25); color: var(--gold2); border-color: rgba(201,168,76,.4); }
+
+/* ── PROGRESS ── */
+.progress-bar { height: 3px; background: var(--line); border-radius: 999px; margin-top: 20px; overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--gold), var(--ink3)); border-radius: 999px; transition: width .3s ease; }
 
 /* ── MOBILE ── */
 @media (max-width: 640px) {
@@ -86,34 +354,34 @@ body {
 <body>
 
 <!-- ── PIN EKRANI ── -->
-<div id="pin-ekran">
-  <div class="pin-kart">
-    <div class="pin-ust">
-      <div class="ikon">🏛️</div>
-      <h2>Sosyal Hizmet</h2>
-      <p>Kuşadası Belediyesi</p>
+<div id="pin-ekran" style="position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1a2236,#0f1620);">
+  <div style="width:290px;background:#1e2a3a;border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,.5);overflow:hidden;text-align:center;">
+    <div style="background:linear-gradient(135deg,#1a2236,#243350);padding:26px 20px 18px;border-bottom:1px solid rgba(201,168,76,.15);">
+      <div style="font-size:38px;margin-bottom:10px;">🏛️</div>
+      <div style="color:#fff;font-size:17px;font-weight:600;margin-bottom:4px;">Sosyal Hizmet</div>
+      <div style="color:rgba(201,168,76,.7);font-size:10px;letter-spacing:2px;text-transform:uppercase;">Kuşadası Belediyesi</div>
     </div>
-    <div class="pin-alti">
-      <div class="pin-noktalar">
-        <div class="pin-nokta" id="pn0"></div>
-        <div class="pin-nokta" id="pn1"></div>
-        <div class="pin-nokta" id="pn2"></div>
-        <div class="pin-nokta" id="pn3"></div>
+    <div style="padding:22px 20px;">
+      <div id="pn-dots" style="display:flex;justify-content:center;gap:14px;margin-bottom:22px;">
+        <div id="pn0" style="width:14px;height:14px;border-radius:50%;background:rgba(255,255,255,.12);border:2px solid rgba(255,255,255,.2);transition:all .15s;"></div>
+        <div id="pn1" style="width:14px;height:14px;border-radius:50%;background:rgba(255,255,255,.12);border:2px solid rgba(255,255,255,.2);transition:all .15s;"></div>
+        <div id="pn2" style="width:14px;height:14px;border-radius:50%;background:rgba(255,255,255,.12);border:2px solid rgba(255,255,255,.2);transition:all .15s;"></div>
+        <div id="pn3" style="width:14px;height:14px;border-radius:50%;background:rgba(255,255,255,.12);border:2px solid rgba(255,255,255,.2);transition:all .15s;"></div>
       </div>
-      <div class="pin-grid">
-        <button class="pin-btn" onclick="pinGir('1')">1</button>
-        <button class="pin-btn" onclick="pinGir('2')">2</button>
-        <button class="pin-btn" onclick="pinGir('3')">3</button>
-        <button class="pin-btn" onclick="pinGir('4')">4</button>
-        <button class="pin-btn" onclick="pinGir('5')">5</button>
-        <button class="pin-btn" onclick="pinGir('6')">6</button>
-        <button class="pin-btn" onclick="pinGir('7')">7</button>
-        <button class="pin-btn" onclick="pinGir('8')">8</button>
-        <button class="pin-btn" onclick="pinGir('9')">9</button>
-        <button class="pin-btn" onclick="pinGir('0')">0</button>
-        <button class="pin-btn sil" onclick="pinSil()">⌫</button>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px;">
+        <button onclick="pGir('1')" style="background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);border-radius:12px;color:#fff;font-size:20px;font-weight:500;padding:15px;cursor:pointer;-webkit-tap-highlight-color:transparent;">1</button>
+        <button onclick="pGir('2')" style="background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);border-radius:12px;color:#fff;font-size:20px;font-weight:500;padding:15px;cursor:pointer;-webkit-tap-highlight-color:transparent;">2</button>
+        <button onclick="pGir('3')" style="background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);border-radius:12px;color:#fff;font-size:20px;font-weight:500;padding:15px;cursor:pointer;-webkit-tap-highlight-color:transparent;">3</button>
+        <button onclick="pGir('4')" style="background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);border-radius:12px;color:#fff;font-size:20px;font-weight:500;padding:15px;cursor:pointer;-webkit-tap-highlight-color:transparent;">4</button>
+        <button onclick="pGir('5')" style="background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);border-radius:12px;color:#fff;font-size:20px;font-weight:500;padding:15px;cursor:pointer;-webkit-tap-highlight-color:transparent;">5</button>
+        <button onclick="pGir('6')" style="background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);border-radius:12px;color:#fff;font-size:20px;font-weight:500;padding:15px;cursor:pointer;-webkit-tap-highlight-color:transparent;">6</button>
+        <button onclick="pGir('7')" style="background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);border-radius:12px;color:#fff;font-size:20px;font-weight:500;padding:15px;cursor:pointer;-webkit-tap-highlight-color:transparent;">7</button>
+        <button onclick="pGir('8')" style="background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);border-radius:12px;color:#fff;font-size:20px;font-weight:500;padding:15px;cursor:pointer;-webkit-tap-highlight-color:transparent;">8</button>
+        <button onclick="pGir('9')" style="background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);border-radius:12px;color:#fff;font-size:20px;font-weight:500;padding:15px;cursor:pointer;-webkit-tap-highlight-color:transparent;">9</button>
+        <button onclick="pGir('0')" style="background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);border-radius:12px;color:#fff;font-size:20px;font-weight:500;padding:15px;cursor:pointer;-webkit-tap-highlight-color:transparent;">0</button>
+        <button onclick="pSil()" style="background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);border-radius:12px;color:rgba(255,255,255,.45);font-size:18px;padding:15px;cursor:pointer;-webkit-tap-highlight-color:transparent;">⌫</button>
       </div>
-      <div class="pin-hata" id="pin-hata"></div>
+      <div id="pn-hata" style="color:#f87171;font-size:12px;min-height:18px;"></div>
     </div>
   </div>
 </div>
@@ -807,47 +1075,34 @@ body {
     if(tab==='liste') renderListe();
   }
 
-  // ── PIN ──
-  const PIN = "0211";
-  let pinGiris = "";
-
-  function pinGir(r) {
-    if (pinGiris.length >= 4) return;
-    pinGiris += r;
-    pinGuncelle();
-    if (pinGiris.length === 4) setTimeout(pinKontrol, 150);
-  }
-  function pinSil() {
-    pinGiris = pinGiris.slice(0, -1);
-    pinGuncelle();
-    document.getElementById('pin-hata').textContent = '';
-  }
-  function pinGuncelle() {
-    for (let i = 0; i < 4; i++) {
-      document.getElementById('pn'+i).className = 'pin-nokta' + (i < pinGiris.length ? ' dolu' : '');
-    }
-  }
-  function pinKontrol() {
-    if (pinGiris === PIN) {
-      try { localStorage.setItem('pin', PIN); } catch(e) {}
-      document.getElementById('pin-ekran').style.display = 'none';
-      document.getElementById('app').style.display = 'block';
+  // ── PIN GİRİŞ ──
+  const _PIN = "0211";
+  let _p = "";
+  function pGir(r){ if(_p.length>=4)return; _p+=r; _pG(); if(_p.length===4)setTimeout(_pK,150); }
+  function pSil(){ _p=_p.slice(0,-1); _pG(); document.getElementById('pn-hata').textContent=''; }
+  function _pG(){ for(let i=0;i<4;i++){const d=document.getElementById('pn'+i);d.style.background=i<_p.length?'#c9a84c':'rgba(255,255,255,.12)';d.style.borderColor=i<_p.length?'#c9a84c':'rgba(255,255,255,.2)';} }
+  function _pK(){
+    if(_p===_PIN){
+      try{localStorage.setItem('_p',_PIN);}catch(e){}
+      document.getElementById('pin-ekran').style.display='none';
+      document.getElementById('app').style.display='block';
     } else {
-      document.getElementById('pin-hata').textContent = 'Hatalı PIN';
-      pinGiris = "";
-      setTimeout(() => { pinGuncelle(); document.getElementById('pin-hata').textContent=''; }, 600);
+      document.getElementById('pn-hata').textContent='Hatalı PIN';
+      _p=""; setTimeout(()=>{_pG();document.getElementById('pn-hata').textContent='';},600);
     }
   }
-  document.addEventListener('keydown', e => {
-    if (document.getElementById('pin-ekran').style.display === 'none') return;
-    if (e.key >= '0' && e.key <= '9') pinGir(e.key);
-    if (e.key === 'Backspace') pinSil();
+  document.addEventListener('keydown',e=>{
+    if(document.getElementById('pin-ekran').style.display==='none')return;
+    if(e.key>='0'&&e.key<='9')pGir(e.key);
+    if(e.key==='Backspace')pSil();
   });
+  // Daha önce girilmiş mi?
+  try{ if(localStorage.getItem('_p')===_PIN){ document.getElementById('pin-ekran').style.display='none'; document.getElementById('app').style.display='block'; } }catch(e){}
 
 
   // Global export
   Object.assign(window,{
-    pinGir, pinSil,
+    pGir,pSil,
     kaydet,kopyala,yeniForm,ac,sil,tumunuSil,gosterTab,girisYap,
     tumunuSec,secimiTemizle,toggleSecim,wordIndir,secilenDosyalariIndir,
     seciliKayitVeyaForm,toggleDigerTalep,toggleArac,toggleTapu,toggleSydv,
@@ -855,12 +1110,6 @@ body {
   });
 
   // Init
-  try {
-    if (localStorage.getItem('pin') === PIN) {
-      document.getElementById('pin-ekran').style.display = 'none';
-      document.getElementById('app').style.display = 'block';
-    }
-  } catch(e) {}
   document.getElementById('foto_dosya').addEventListener('change',handleFile);
   document.getElementById('arama').addEventListener('input',renderListe);
   document.getElementById('tarih').value=bugun();

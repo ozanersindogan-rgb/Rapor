@@ -1197,6 +1197,7 @@ Bulamadığın alanları boş bırak. Tarihleri GG.AA.YYYY formatında yaz. Ad s
   try {
     if (localStorage.getItem("pin") === KOD) {
       document.getElementById("pinEkran").style.display = "none";
+      document.getElementById("app").style.display = "block";
       return;
     }
   } catch(e) {}
@@ -1214,6 +1215,7 @@ Bulamadığın alanları boş bırak. Tarihleri GG.AA.YYYY formatında yaz. Ad s
     if (giris === KOD) {
       try { localStorage.setItem("pin", KOD); } catch(e) {}
       document.getElementById("pinEkran").style.display = "none";
+      document.getElementById("app").style.display = "block";
     } else {
       document.getElementById("pinHata").textContent = "Hatalı PIN";
       var dots = document.getElementById("pinDots");

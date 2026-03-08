@@ -27,30 +27,26 @@
     html,body { min-height:100%; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background:
-        radial-gradient(circle at top right, rgba(43,100,142,.12), transparent 25%),
-        linear-gradient(180deg, #f7fafc 0%, var(--bg) 100%);
+      background: #f4f6f9;
       color: var(--text);
     }
     .shell { min-height:100vh; }
     header {
       background: linear-gradient(135deg, var(--navy), var(--navy-2));
       color: white;
-      padding: 16px 20px;
+      padding: 12px 16px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       position: sticky;
       top: 0;
       z-index: 100;
-      box-shadow: 0 10px 24px rgba(13,33,54,.18);
-      border-bottom-left-radius: 22px;
-      border-bottom-right-radius: 22px;
-      margin: 0 8px;
+      box-shadow: 0 2px 12px rgba(0,0,0,.16);
+      
     }
     .head-left { display:flex; align-items:center; gap:14px; }
     .seal {
-      width:48px; height:48px; border-radius:14px;
+      width:40px; height:40px; border-radius:12px;
       background: rgba(255,255,255,.12);
       border:1px solid rgba(255,255,255,.2);
       display:flex; align-items:center; justify-content:center;
@@ -58,7 +54,7 @@
       box-shadow: inset 0 1px 0 rgba(255,255,255,.16);
     }
     .title-small { font-size: 10px; letter-spacing: 2px; opacity: .7; text-transform: uppercase; margin-bottom: 2px; }
-    header h1 { font-family: Georgia, serif; font-size: 20px; font-weight: 600; letter-spacing:.2px; }
+    header h1 { font-family: Georgia, serif; font-size: 18px; font-weight: 600; }
     .tab-btns { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
     .tab-btn {
       background: rgba(255,255,255,.10); color: white; border: 1px solid rgba(255,255,255,.22);
@@ -67,24 +63,7 @@
     }
     .tab-btn.active { background: rgba(255,255,255,.22); box-shadow: inset 0 1px 0 rgba(255,255,255,.15); }
     .badge { background: var(--gold); color: #43320a; border-radius: 999px; padding: 2px 8px; font-size: 10px; font-weight: 800; }
-    main { max-width: 920px; margin: 0 auto; padding: 24px 16px 60px; }
-    .hero {
-      background: linear-gradient(135deg, rgba(21,53,84,.98), rgba(43,100,142,.95));
-      color:white; border-radius: 24px; padding: 20px; margin: 0 0 18px;
-      box-shadow: 0 18px 34px rgba(21,53,84,.16);
-      position:relative; overflow:hidden;
-    }
-    .hero:after{
-      content:""; position:absolute; right:-50px; top:-30px; width:190px; height:190px;
-      background: radial-gradient(circle, rgba(230,190,84,.18), transparent 65%);
-      border-radius:50%;
-    }
-    .hero h2 { font-family: Georgia, serif; font-size: 22px; margin-bottom: 8px; }
-    .hero p { max-width: 680px; color: rgba(255,255,255,.85); line-height: 1.55; font-size: 13px; }
-    .hero-grid { display:grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 10px; margin-top: 16px; }
-    .hero-chip { background: rgba(255,255,255,.10); border:1px solid rgba(255,255,255,.14); border-radius:16px; padding:12px 14px; }
-    .hero-chip b { display:block; font-size:15px; margin-bottom:4px; }
-    .hero-chip span { font-size:12px; color: rgba(255,255,255,.8); }
+    main { max-width: 760px; margin: 0 auto; padding: 18px 14px 48px; }
     .section {
       background: var(--card); border-radius: var(--radius); margin-bottom: 16px; box-shadow: var(--shadow);
       overflow: hidden; border:1px solid rgba(215,224,234,.8);
@@ -94,7 +73,7 @@
       color: white; padding: 12px 18px; font-weight: 700; font-size: 11px; letter-spacing: 1.6px; text-transform: uppercase;
       display:flex; align-items:center; justify-content:space-between;
     }
-    .section-title span { opacity: .64; font-weight: 500; }
+    .section-title span { opacity: .64; font-weight: 500; min-height:1px; }
     .section-body { padding: 18px; display: flex; flex-direction: column; gap: 14px; }
     .row2, .row3 { display: grid; gap: 12px; }
     .row2 { grid-template-columns: 1fr 1fr; }
@@ -177,7 +156,7 @@
     .small-link { color: var(--navy-2); text-decoration:none; font-weight:700; }
     .soft-tag { display:inline-flex; align-items:center; gap:6px; background:#eef6ff; color:#20537b; padding:6px 10px; border-radius:999px; font-size:12px; font-weight:700; }
     @media (max-width: 760px) {
-      .row2, .row3, .checkbox-grid, .hero-grid { grid-template-columns: 1fr; }
+      .row2, .row3, .checkbox-grid { grid-template-columns: 1fr; }
       .kayit-ust { flex-direction: column; align-items: stretch; }
       .kayit-btns .btn { flex:1; justify-content:center; }
       .head-left { gap:10px; }
@@ -185,7 +164,6 @@
       header { padding: 14px; }
       header h1 { font-size: 18px; }
       main { padding-inline: 12px; }
-      .hero { padding: 18px; }
     }
   </style>
 </head>
@@ -224,19 +202,10 @@
     </header>
 
     <main>
-      <div class="hero">
-        <h2>Görüşme kaydı, ek görsel ve Word raporu tek ekranda</h2>
-        <p>Fotoğraf yükleyebilir veya tek sayfalık PDF seçebilirsiniz. PDF ilk sayfa olarak görsele çevrilir ve kayıtla birlikte link olarak saklanır.</p>
-        <div class="hero-grid">
-          <div class="hero-chip"><b>Şifreli giriş</b><span>Üyelik gerektirmez</span></div>
-          <div class="hero-chip"><b>PDF → Görsel</b><span>İlk sayfa otomatik çevrilir</span></div>
-          <div class="hero-chip"><b>Çoklu seçim</b><span>Seçilen dosyaları toplu indir</span></div>
-        </div>
-      </div>
 
       <div id="page-form">
         <div class="section">
-          <div class="section-title">Kişi Bilgisi <span>Temel kayıt</span></div>
+          <div class="section-title">Kişi Bilgisi <span></span></div>
           <div class="section-body">
             <div>
               <label for="ad_soyad">Adı Soyadı *</label>
@@ -246,7 +215,7 @@
         </div>
 
         <div class="section">
-          <div class="section-title">Görüşme Bilgileri <span>Talep ve aile durumu</span></div>
+          <div class="section-title">Görüşme Bilgileri <span></span></div>
           <div class="section-body">
             <div class="row2">
               <div>
@@ -292,18 +261,12 @@
         </div>
 
         <div class="section">
-          <div class="section-title">Değerlendirme ve Ekler <span>Link, görsel ve notlar</span></div>
+          <div class="section-title">Değerlendirme ve Ekler <span></span></div>
           <div class="section-body">
-            <div class="row2">
-              <div>
+            <div>
                 <label for="sydv">SYDV Bilgisi</label>
                 <input id="sydv" type="text" />
               </div>
-              <div>
-                <label for="dosya_link">PDF / Evrak Linki</label>
-                <input id="dosya_link" type="url" placeholder="Varsa manuel link ekleyin" />
-              </div>
-            </div>
             <div>
               <label for="belediye">Belediye Geçmiş Yardımları</label>
               <textarea id="belediye"></textarea>
@@ -315,9 +278,14 @@
 
             <div class="ek-kutu">
               <label for="foto_dosya">Fotoğraf veya Tek Sayfa PDF</label>
+              <div class="kucuk" style="margin:4px 0 10px;">Görsel ya da tek sayfa PDF seçebilirsin.</div>
               <input id="foto_dosya" type="file" accept="image/*,.pdf,application/pdf" />
               <div class="kucuk" style="margin-top:8px;">Fotoğraf doğrudan yüklenir. PDF seçersen ilk sayfa görsele çevrilip yüklenir.</div>
               <div id="dosya-pill" class="file-pill" style="display:none;">📎 <span id="dosya-pill-text"></span></div>
+              <div style="margin-top:10px;">
+                <label for="dosya_link">Fotoğraf / PDF Linki</label>
+                <input id="dosya_link" type="url" placeholder="Yükleme sonrası link burada görünür veya manuel eklenebilir" />
+              </div>
               <div id="preview-wrap" class="preview-wrap">
                 <div class="preview-card">
                   <div class="preview-head">

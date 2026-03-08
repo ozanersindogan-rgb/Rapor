@@ -570,18 +570,19 @@ textarea { resize: vertical; min-height: 84px; line-height: 1.7; }
 
           <!-- Dosya -->
           <div>
-            <label class="field-label">Fotoğraf Eki</label>
+            <label class="field-label">Fotoğraf / Tek Sayfa PDF</label>
             <div id="foto-zone" class="file-zone" onclick="document.getElementById('foto_dosya').click()">
               <div class="file-zone-icon" id="foto-ikon">📷</div>
-              <p id="foto-yazi">Fotoğraf seçmek için dokunun</p>
+              <p id="foto-yazi">Fotoğraf veya tek sayfa PDF seçmek için dokunun</p>
             </div>
-            <input id="foto_dosya" type="file" accept="image/*" style="display:none"/>
+            <input id="foto_dosya" type="file" accept="image/*,application/pdf" style="display:none"/>
             <img id="foto-onizleme" style="display:none;width:100%;border-radius:10px;margin-top:8px;"/>
             <div style="margin-top:10px;">
               <label class="field-label">Dosya Linki</label>
               <input id="dosya_link" type="url" placeholder="Yükleme sonrası otomatik dolar" readonly/>
             </div>
             <div id="upload-uyari" class="flash"></div>
+          </div>
           <div id="form-mesaj" class="flash"></div>
 
           <div class="btn-row">
@@ -772,7 +773,7 @@ textarea { resize: vertical; min-height: 84px; line-height: 1.7; }
     const img = document.getElementById('foto-onizleme');
     if (img) { img.src=''; img.style.display='none'; }
     const yazi = document.getElementById('foto-yazi');
-    if (yazi) yazi.textContent = 'Fotoğraf seçmek için dokunun';
+    if (yazi) yazi.textContent = 'Fotoğraf veya tek sayfa PDF seçmek için dokunun';
     const ikon = document.getElementById('foto-ikon');
     if (ikon) ikon.textContent = '📷';
     selectedUpload = null;
@@ -793,41 +794,54 @@ textarea { resize: vertical; min-height: 84px; line-height: 1.7; }
     const file = document.getElementById('foto_dosya').files?.[0];
     if (!file) return;
 
-    // Önizleme - her zaman çalışır
-    const reader = new FileReader();
-    reader.onload = async function(e) {
-      const b64 = e.target.result;
-      const img = document.getElementById('foto-onizleme');
-      img.src = b64;
-      img.style.display = 'block';
-      document.getElementById('foto-yazi').textContent = '✅ ' + file.name;
-      document.getElementById('foto-ikon').textContent = '';
+    const uyari = document.getElementById('upload-uyari');
+    const img = document.getElementById('foto-onizleme');
+    const yazi = document.getElementById('foto-yazi');
+    const ikon = document.getElementById('foto-ikon');
+    const linkEl = document.getElementById('dosya_link');
 
-      // imgbb yükleme
-      const linkEl = document.getElementById('dosya_link');
-      linkEl.value = 'Yükleniyor…';
-      try {
-        const fd = new FormData();
-        fd.append('image', b64.split(',')[1]); // base64 string
-        const res = await fetch('https://api.imgbb.com/1/upload?key=a4bf9947bd3106b22e140266f63c713b', {
-          method: 'POST', body: fd
-        });
-        const data = await res.json();
-        if (data.success) {
-          linkEl.value = data.data.url;
-          selectedUpload = { blob: file, fileName: file.name, imgbbLink: data.data.url };
-        } else {
-          linkEl.value = '';
-          selectedUpload = { blob: file, fileName: file.name };
-          console.warn('imgbb:', data);
-        }
-      } catch(err) {
-        linkEl.value = '';
-        selectedUpload = { blob: file, fileName: file.name };
-        console.error('imgbb hata:', err.message);
+    uyari.style.display = 'block';
+    uyari.textContent = 'Yükleniyor...';
+    uyari.style.background = '#fff7e6';
+    uyari.style.border = '1.5px solid #f3d08a';
+    uyari.style.color = '#8a5b00';
+
+    try {
+      let uploadBlob = file;
+      let fileName = file.name;
+
+      if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+        uploadBlob = await pdfToBlob(file);
+        fileName = file.name.replace(/\.pdf$/i, '.png');
       }
-    };
-    reader.readAsDataURL(file);
+
+      const previewUrl = URL.createObjectURL(uploadBlob);
+      img.src = previewUrl;
+      img.style.display = 'block';
+      yazi.textContent = '✅ ' + file.name;
+      ikon.textContent = '📎';
+      linkEl.value = 'Yükleniyor...';
+
+      const link = await imgbbYukle(uploadBlob, fileName);
+      linkEl.value = link;
+      selectedUpload = { blob: uploadBlob, fileName: file.name, imgbbLink: link };
+
+      uyari.textContent = 'Dosya yüklendi.';
+      uyari.style.background = '#eefaf3';
+      uyari.style.border = '1.5px solid #9ed6b6';
+      uyari.style.color = '#0f6b4e';
+    } catch (err) {
+      console.error('Dosya yükleme hatası:', err);
+      selectedUpload = null;
+      linkEl.value = '';
+      img.style.display = 'none';
+      yazi.textContent = 'Fotoğraf veya tek sayfa PDF seçmek için dokunun';
+      ikon.textContent = '📷';
+      uyari.textContent = 'Yükleme başarısız: ' + (err.message || 'Bilinmeyen hata');
+      uyari.style.background = '#fff1f2';
+      uyari.style.border = '1.5px solid #f5b5bc';
+      uyari.style.color = '#922b21';
+    }
   }
   async function imgbbYukle(blob,name='dosya.png') {
     const fd=new FormData(); fd.append('image',blob,name); fd.append('name',name.replace(/\.[^.]+$/,''));
@@ -857,15 +871,7 @@ textarea { resize: vertical; min-height: 84px; line-height: 1.7; }
         form.dosya_link = selectedUpload.imgbbLink;
         form.dosya_adi  = selectedUpload.fileName||'';
       } else if(selectedUpload?.blob && !selectedUpload?.imgbbLink) {
-        // Henüz yüklenmediyse tekrar dene
-        try {
-          const fd = new FormData();
-          const b64 = await new Promise(r=>{const rd=new FileReader();rd.onload=e=>r(e.target.result.split(',')[1]);rd.readAsDataURL(selectedUpload.blob);});
-          fd.append('image', b64);
-          const res = await fetch('https://api.imgbb.com/1/upload?key=a4bf9947bd3106b22e140266f63c713b',{method:'POST',body:fd});
-          const data = await res.json();
-          if(data.success){ form.dosya_link=data.data.url; form.dosya_adi=selectedUpload.fileName||''; document.getElementById('dosya_link').value=data.data.url; }
-        } catch(e) { console.error(e); }
+        throw new Error('Seçilen dosya henüz yüklenemedi. Önce dosya yüklemesinin tamamlanmasını bekleyin.');
       }
       if(secili) {
         await db.collection('raporlar').doc(secili).update({...form,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});

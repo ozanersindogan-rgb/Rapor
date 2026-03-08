@@ -656,8 +656,7 @@ textarea { resize: vertical; min-height: 84px; line-height: 1.7; }
 <script>
 
 
-  var IMGBB_KEY = "a4bf9947bd3106b22e140266f63c713b";
-
+  
   const firebaseConfig = {
     apiKey: "AIzaSyB9tYLbLRiY9HEfJQLQcyI5aij6wY2Qw_E",
     authDomain: "rapor-1192a.firebaseapp.com",
@@ -795,10 +794,6 @@ textarea { resize: vertical; min-height: 84px; line-height: 1.7; }
     if(metin) setTimeout(()=>el.style.display='none',3500);
   }
 
-  /* ── DOSYA ── */
-    s.textContent=t; w.style.display='inline-flex';
-  }
-  }
 
   /* ── VERİ ── */
   async function yukle() {
@@ -820,10 +815,10 @@ textarea { resize: vertical; min-height: 84px; line-height: 1.7; }
     try {
 
       if(secili) {
-        await db.collection('raporlar').doc(secili).update({...form,updatedAt:firebase.firestore.FieldValue.firebase.firestore.FieldValue.serverTimestamp()});
+        await db.collection('raporlar').doc(secili).update({...form,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
         flash('form-mesaj','✅ Güncellendi!');
       } else {
-        const ref=await col.add({...form,createdAt:firebase.firestore.FieldValue.firebase.firestore.FieldValue.serverTimestamp(),updatedAt:firebase.firestore.FieldValue.firebase.firestore.FieldValue.serverTimestamp()});
+        const ref=await col.add({...form,createdAt:firebase.firestore.FieldValue.serverTimestamp(),updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
         secili=ref.id;
         document.getElementById('kaydet-label').textContent='Güncelle';
         flash('form-mesaj','✅ Kaydedildi!');
@@ -867,7 +862,6 @@ textarea { resize: vertical; min-height: 84px; line-height: 1.7; }
     secili=null;
     setForm({tarih:bugun(),talep_liste:[]});
     document.getElementById('kaydet-label').textContent='Kaydet';
-    document.getElementById('upload-uyari').style.display='none';
     gosterTab('form');
     window.scrollTo({top:0,behavior:'smooth'});
   }

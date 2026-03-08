@@ -334,8 +334,15 @@ textarea { resize: vertical; min-height: 84px; line-height: 1.7; }
 /* ── MOBILE ── */
 @media (max-width: 640px) {
   .grid2, .grid3, .check-grid { grid-template-columns: 1fr; }
-  .header-inner { height: auto; min-height: 56px; padding: 8px 0; flex-wrap: wrap; gap: 8px; }
-  .brand-text h1 { font-size: 14px; }
+  header { padding: 0 12px; }
+  .header-inner { height: auto; padding: 10px 0; flex-wrap: nowrap; gap: 8px; justify-content: space-between; }
+  .brand { gap: 8px; flex-shrink: 1; min-width: 0; overflow: hidden; }
+  .brand img { height: 32px !important; }
+  .brand-text .sup { display: none; }
+  .brand-text h1 { font-size: 13px; white-space: nowrap; }
+  .nav { flex-shrink: 0; display: flex; gap: 6px; }
+  .nav-btn { padding: 8px 12px; font-size: 12px; font-weight: 700; }
+  .nav-btn span:not(.nav-badge) { display: inline !important; }
   .app-body { padding: 16px 12px 80px; }
   .card-body { padding: 16px; }
   .btn-row { gap: 8px; }
@@ -344,11 +351,6 @@ textarea { resize: vertical; min-height: 84px; line-height: 1.7; }
   .kayit-actions { width: 100%; }
   .kayit-actions .btn { flex: 1; justify-content: center; }
   .liste-header { flex-direction: column; }
-  .nav-btn span:not(.nav-badge) { display: none; }
-  .nav-btn { padding: 8px 12px; font-size: 13px; }
-  .nav { gap: 6px; }
-  .brand-text h1 { font-size: 13px; }
-  .brand { gap: 8px; }
 }
 </style>
 </head>

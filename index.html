@@ -345,35 +345,46 @@ textarea { resize: vertical; min-height: 84px; line-height: 1.7; }
 </head>
 <body>
 
-<!-- ── GİRİŞ PIN ── -->
-<div id="pin-overlay">
-  <div class="pin-card">
-    <div class="pin-head">
-      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAHcAAACoCAYAAADaUXFwAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAC1ySURBVHgB7X0HfBzVtf6Zme27KqveLMm23DvgCtiOMdiGQGgmoSWYkhfIPzwIqY" style="height:52px;border-radius:10px;margin-bottom:12px;"/>
-      <h2>Sosyal Hizmet</h2>
-      <p>Kuşadası Belediyesi</p>
+
+<!-- ── PIN EKRANI ── -->
+<div id="pinEkran" style="
+  position:fixed;inset:0;z-index:99999;
+  display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,#1a2236 0%,#0f1620 100%);
+">
+  <div style="
+    width:300px;background:#1e2a3a;border-radius:20px;
+    box-shadow:0 20px 60px rgba(0,0,0,.5);overflow:hidden;text-align:center;
+  ">
+    <div style="
+      background:linear-gradient(135deg,#1a2236,#243350);
+      padding:24px 20px 18px;border-bottom:1px solid rgba(201,168,76,.15);
+    ">
+      <div style="font-size:32px;margin-bottom:8px;">🏛️</div>
+      <div style="color:#fff;font-size:17px;font-weight:600;margin-bottom:4px;">Sosyal Hizmet</div>
+      <div style="color:rgba(201,168,76,.7);font-size:10px;letter-spacing:2px;text-transform:uppercase;">Kuşadası Belediyesi</div>
     </div>
-    <div class="pin-body">
-      <div class="pin-dots">
-        <div class="pin-dot" id="d0"></div>
-        <div class="pin-dot" id="d1"></div>
-        <div class="pin-dot" id="d2"></div>
-        <div class="pin-dot" id="d3"></div>
+    <div style="padding:20px;">
+      <div id="pinDots" style="display:flex;justify-content:center;gap:14px;margin-bottom:20px;transition:transform .1s;">
+        <div id="pd0" style="width:14px;height:14px;border-radius:50%;background:rgba(255,255,255,.1);border:2px solid rgba(255,255,255,.2);"></div>
+        <div id="pd1" style="width:14px;height:14px;border-radius:50%;background:rgba(255,255,255,.1);border:2px solid rgba(255,255,255,.2);"></div>
+        <div id="pd2" style="width:14px;height:14px;border-radius:50%;background:rgba(255,255,255,.1);border:2px solid rgba(255,255,255,.2);"></div>
+        <div id="pd3" style="width:14px;height:14px;border-radius:50%;background:rgba(255,255,255,.1);border:2px solid rgba(255,255,255,.2);"></div>
       </div>
-      <div class="pin-grid">
-        <button class="pin-btn" onclick="pinGir('1')">1</button>
-        <button class="pin-btn" onclick="pinGir('2')">2</button>
-        <button class="pin-btn" onclick="pinGir('3')">3</button>
-        <button class="pin-btn" onclick="pinGir('4')">4</button>
-        <button class="pin-btn" onclick="pinGir('5')">5</button>
-        <button class="pin-btn" onclick="pinGir('6')">6</button>
-        <button class="pin-btn" onclick="pinGir('7')">7</button>
-        <button class="pin-btn" onclick="pinGir('8')">8</button>
-        <button class="pin-btn" onclick="pinGir('9')">9</button>
-        <button class="pin-btn" onclick="pinGir('0')">0</button>
-        <button class="pin-btn del" onclick="pinSil()">⌫</button>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px;">
+        <button onclick="PG('1')" style="background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);border-radius:12px;color:#fff;font-size:20px;padding:14px;cursor:pointer;">1</button>
+        <button onclick="PG('2')" style="background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);border-radius:12px;color:#fff;font-size:20px;padding:14px;cursor:pointer;">2</button>
+        <button onclick="PG('3')" style="background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);border-radius:12px;color:#fff;font-size:20px;padding:14px;cursor:pointer;">3</button>
+        <button onclick="PG('4')" style="background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);border-radius:12px;color:#fff;font-size:20px;padding:14px;cursor:pointer;">4</button>
+        <button onclick="PG('5')" style="background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);border-radius:12px;color:#fff;font-size:20px;padding:14px;cursor:pointer;">5</button>
+        <button onclick="PG('6')" style="background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);border-radius:12px;color:#fff;font-size:20px;padding:14px;cursor:pointer;">6</button>
+        <button onclick="PG('7')" style="background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);border-radius:12px;color:#fff;font-size:20px;padding:14px;cursor:pointer;">7</button>
+        <button onclick="PG('8')" style="background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);border-radius:12px;color:#fff;font-size:20px;padding:14px;cursor:pointer;">8</button>
+        <button onclick="PG('9')" style="background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);border-radius:12px;color:#fff;font-size:20px;padding:14px;cursor:pointer;">9</button>
+        <button onclick="PG('0')" style="background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);border-radius:12px;color:#fff;font-size:20px;padding:14px;cursor:pointer;">0</button>
+        <button onclick="PS()" style="background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);border-radius:12px;color:rgba(255,255,255,.5);font-size:16px;padding:14px;cursor:pointer;">⌫</button>
       </div>
-      <div class="pin-error" id="pin-error"></div>
+      <div id="pinHata" style="color:#f87171;font-size:12px;min-height:16px;"></div>
     </div>
   </div>
 </div>
@@ -644,57 +655,7 @@ textarea { resize: vertical; min-height: 84px; line-height: 1.7; }
 
 <script>
 
-  var SIFRE = "ozanersin5752";
 
-  // ── PIN GİRİŞ (Tamamen bağımsız, saf JS) ──────────────────────
-  var PIN_KOD = "5752";
-  var pinGiris = "";
-
-  function pinGir(rakam) {
-    if (pinGiris.length >= 4) return;
-    pinGiris += rakam;
-    pinGuncelle();
-    if (pinGiris.length === 4) {
-      setTimeout(pinKontrol, 150);
-    }
-  }
-
-  function pinSil() {
-    pinGiris = pinGiris.slice(0, -1);
-    pinGuncelle();
-    document.getElementById('pin-error').textContent = '';
-  }
-
-  function pinGuncelle() {
-    for (var i = 0; i < 4; i++) {
-      var dot = document.getElementById('d' + i);
-      if (dot) dot.className = 'pin-dot' + (i < pinGiris.length ? ' filled' : '');
-    }
-  }
-
-  function pinKontrol() {
-    if (pinGiris === PIN_KOD) {
-      document.getElementById('pin-overlay').style.display = 'none';
-      try { localStorage.setItem('pin_ok', PIN_KOD); } catch(e) {}
-    } else {
-      document.getElementById('pin-error').textContent = 'Hatalı PIN, tekrar deneyin';
-      pinGiris = "";
-      pinGuncelle();
-      // Titreşim efekti
-      var dots = document.querySelector('.pin-dots');
-      dots.style.transform = 'translateX(8px)';
-      setTimeout(function(){ dots.style.transform = 'translateX(-8px)'; }, 80);
-      setTimeout(function(){ dots.style.transform = 'translateX(0)'; }, 160);
-    }
-  }
-
-  // Klavye desteği
-  document.addEventListener('keydown', function(e) {
-    if (document.getElementById('pin-overlay').style.display === 'none') return;
-    if (e.key >= '0' && e.key <= '9') pinGir(e.key);
-    if (e.key === 'Backspace') pinSil();
-  });
-  // ──────────────────────────────────────────────────────────────
   var IMGBB_KEY = "a4bf9947bd3106b22e140266f63c713b";
 
   const firebaseConfig = {
@@ -1215,16 +1176,9 @@ Bulamadığın alanları boş bırak. Tarihleri GG.AA.YYYY formatında yaz. Ad s
   // Global export
 
 
-  // PIN kontrolü — sayfa açılışında daha önce doğru PIN girilmiş mi?
-  try {
-    if (localStorage.getItem('pin_ok') === PIN_KOD) {
-      document.getElementById('pin-overlay').style.display = 'none';
-    }
-  } catch(e) {}
 
   // Global export — ÖNCE yapılmalı ki HTML onclick'ler çalışsın
   Object.assign(window,{
-    pinGir,pinSil,pinKontrol,
     kaydet,kopyala,yeniForm,ac,sil,tumunuSil,gosterTab,
     tumunuSec,secimiTemizle,toggleSecim,wordIndir,secilenDosyalariIndir,
     seciliKayitVeyaForm,toggleDigerTalep,toggleArac,toggleTapu,toggleSydv,
@@ -1237,6 +1191,68 @@ Bulamadığın alanları boş bırak. Tarihleri GG.AA.YYYY formatında yaz. Ad s
   document.getElementById('foto_dosya').addEventListener('change', e => { if(e.target.files[0]) fotoSec(e.target.files[0]); });
   document.getElementById('tarih').value=bugun();
   yukle();
+</script>
+
+<!-- PIN Script - Tamamen bağımsız -->
+<script>
+(function() {
+  var KOD = "0211";
+  var giris = "";
+
+  // Daha önce giriş yapıldı mı?
+  try {
+    if (localStorage.getItem("pin") === KOD) {
+      document.getElementById("pinEkran").style.display = "none";
+      return;
+    }
+  } catch(e) {}
+
+  function guncelle() {
+    for (var i = 0; i < 4; i++) {
+      var d = document.getElementById("pd" + i);
+      if (!d) continue;
+      d.style.background = i < giris.length ? "#c9a84c" : "rgba(255,255,255,.1)";
+      d.style.borderColor = i < giris.length ? "#c9a84c" : "rgba(255,255,255,.2)";
+    }
+  }
+
+  function kontrol() {
+    if (giris === KOD) {
+      try { localStorage.setItem("pin", KOD); } catch(e) {}
+      document.getElementById("pinEkran").style.display = "none";
+    } else {
+      document.getElementById("pinHata").textContent = "Hatalı PIN";
+      var dots = document.getElementById("pinDots");
+      dots.style.transform = "translateX(10px)";
+      setTimeout(function(){ dots.style.transform = "translateX(-10px)"; }, 80);
+      setTimeout(function(){ dots.style.transform = "translateX(0)"; }, 160);
+      setTimeout(function(){
+        giris = "";
+        guncelle();
+        document.getElementById("pinHata").textContent = "";
+      }, 500);
+    }
+  }
+
+  window.PG = function(r) {
+    if (giris.length >= 4) return;
+    giris += r;
+    guncelle();
+    if (giris.length === 4) setTimeout(kontrol, 150);
+  };
+
+  window.PS = function() {
+    giris = giris.slice(0, -1);
+    guncelle();
+    document.getElementById("pinHata").textContent = "";
+  };
+
+  document.addEventListener("keydown", function(e) {
+    if (document.getElementById("pinEkran").style.display === "none") return;
+    if (e.key >= "0" && e.key <= "9") window.PG(e.key);
+    if (e.key === "Backspace") window.PS();
+  });
+})();
 </script>
 </body>
 </html>

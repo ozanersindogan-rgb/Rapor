@@ -4,6 +4,9 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>SİR – Kuşadası Belediyesi</title>
+<!-- Firebase compat -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
@@ -651,9 +654,7 @@ textarea { resize: vertical; min-height: 84px; line-height: 1.7; }
   </div>
 </div>
 
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getFirestore, collection, addDoc, updateDoc, deleteDoc, getDocs, getDoc, doc, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+<script>
 
   const SIFRE     = "ozanersin5752";
   const IMGBB_KEY = "a4bf9947bd3106b22e140266f63c713b";
@@ -667,9 +668,9 @@ textarea { resize: vertical; min-height: 84px; line-height: 1.7; }
     appId: "1:880961076992:web:7cd6e7e03c066e06c7fde5"
   };
 
-  const app = initializeApp(firebaseConfig);
-  const db  = getFirestore(app);
-  const col = collection(db, "raporlar");
+  firebase.initializeApp(firebaseConfig);
+  const db  = firebase.firestore();
+  const col = db.collection("raporlar");
 
   let secili = null, cache = [], secilenler = new Set();
 
@@ -802,7 +803,7 @@ textarea { resize: vertical; min-height: 84px; line-height: 1.7; }
 
   /* ── VERİ ── */
   async function yukle() {
-    const snap=await getDocs(query(col,orderBy('createdAt','desc')));
+    const snap=await col.orderBy('createdAt','desc').get();
     cache=snap.docs.map(d=>({id:d.id,...d.data()}));
     cache.sort((a,b)=>parseTR(b.tarih)-parseTR(a.tarih)||((b.createdAt?.seconds||0)-(a.createdAt?.seconds||0)));
     const n=cache.length;
@@ -820,10 +821,10 @@ textarea { resize: vertical; min-height: 84px; line-height: 1.7; }
     try {
 
       if(secili) {
-        await updateDoc(doc(db,'raporlar',secili),{...form,updatedAt:serverTimestamp()});
+        await db.collection('raporlar').doc(secili).update({...form,updatedAt:firebase.firestore.FieldValue.firebase.firestore.FieldValue.serverTimestamp()});
         flash('form-mesaj','✅ Güncellendi!');
       } else {
-        const ref=await addDoc(col,{...form,createdAt:serverTimestamp(),updatedAt:serverTimestamp()});
+        const ref=await col.add({...form,createdAt:firebase.firestore.FieldValue.firebase.firestore.FieldValue.serverTimestamp(),updatedAt:firebase.firestore.FieldValue.firebase.firestore.FieldValue.serverTimestamp()});
         secili=ref.id;
         document.getElementById('kaydet-label').textContent='Güncelle';
         flash('form-mesaj','✅ Kaydedildi!');
@@ -874,8 +875,8 @@ textarea { resize: vertical; min-height: 84px; line-height: 1.7; }
 
   async function ac(id) {
     try {
-      const snap=await getDoc(doc(db,'raporlar',id));
-      if(!snap.exists()){flash('form-mesaj','Kayıt bulunamadı.',false);return;}
+      const snap=await db.collection('raporlar').doc(id).get();
+      if(!snap.exists){flash('form-mesaj','Kayıt bulunamadı.',false);return;}
       secili=id; setForm(snap.data());
       document.getElementById('kaydet-label').textContent='Güncelle';
       gosterTab('form'); window.scrollTo({top:0,behavior:'smooth'});
@@ -884,7 +885,7 @@ textarea { resize: vertical; min-height: 84px; line-height: 1.7; }
 
   async function sil(id) {
     try {
-      await deleteDoc(doc(db,'raporlar',id));
+      await db.collection('raporlar').doc(id).delete();
       secilenler.delete(id);
       if(secili===id){secili=null;setForm({tarih:bugun(),talep_liste:[]});document.getElementById('kaydet-label').textContent='Kaydet';}
       await yukle();
@@ -893,8 +894,8 @@ textarea { resize: vertical; min-height: 84px; line-height: 1.7; }
 
   async function tumunuSil() {
     if(!confirm('Tüm kayıtlar silinsin mi?')) return;
-    const snap=await getDocs(col);
-    await Promise.all(snap.docs.map(d=>deleteDoc(d.ref)));
+    const snap=await col.get();
+    await Promise.all(snap.docs.map(d=>d.ref.delete()));
     secili=null; secilenler.clear();
     setForm({tarih:bugun(),talep_liste:[]});
     document.getElementById('kaydet-label').textContent='Kaydet';
@@ -1182,11 +1183,15 @@ Bulamadığın alanları boş bırak. Tarihleri GG.AA.YYYY formatında yaz. Ad s
   }
 
   // Global export
+
+
+  // Global export — ÖNCE yapılmalı ki HTML onclick'ler çalışsın
   Object.assign(window,{
     kaydet,kopyala,yeniForm,ac,sil,tumunuSil,gosterTab,girisYap,
     tumunuSec,secimiTemizle,toggleSecim,wordIndir,secilenDosyalariIndir,
     seciliKayitVeyaForm,toggleDigerTalep,toggleArac,toggleTapu,toggleSydv,
-    toggleBelediye,sablon,hesaplaIlerleme
+    toggleBelediye,sablon,hesaplaIlerleme,
+    fotoSec,fotoTemizle,aiOku,imgbbYukle
   });
 
   // Init

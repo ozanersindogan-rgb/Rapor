@@ -1104,6 +1104,7 @@ textarea { resize: vertical; min-height: 84px; line-height: 1.7; }
   Object.assign(window,{
     pGir,pSil,
     kaydet,kopyala,yeniForm,ac,sil,tumunuSil,gosterTab,girisYap,
+    handleFile,
     tumunuSec,secimiTemizle,toggleSecim,wordIndir,secilenDosyalariIndir,
     seciliKayitVeyaForm,toggleDigerTalep,toggleArac,toggleTapu,toggleSydv,
     toggleBelediye,sablon,hesaplaIlerleme
@@ -1112,6 +1113,7 @@ textarea { resize: vertical; min-height: 84px; line-height: 1.7; }
   // Init
   document.getElementById('foto_dosya').addEventListener('change',handleFile);
   document.getElementById('arama').addEventListener('input',renderListe);
+  document.getElementById('foto_dosya').addEventListener('change', handleFile);
   document.getElementById('tarih').value=bugun();
   yukle();
 </script>

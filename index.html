@@ -7,7 +7,6 @@
 <script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <style>
 :root {
@@ -229,29 +228,6 @@ textarea { resize: vertical; min-height: 84px; line-height: 1.7; }
 }
 @keyframes slideDown { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
 
-/* ── DOSYA ALANI ── */
-.file-zone {
-  border: 2px dashed var(--line); border-radius: 14px; padding: 20px;
-  text-align: center; background: #fafcff; cursor: pointer;
-  transition: border .15s, background .15s;
-}
-.file-zone:hover { border-color: var(--ink3); background: #f0f6ff; }
-.file-zone-icon { font-size: 28px; margin-bottom: 8px; }
-.file-zone p { font-size: 13px; color: var(--muted); }
-.file-zone small { font-size: 11px; color: #aab; }
-#foto_dosya { display: none; }
-.file-pill {
-  display: inline-flex; align-items: center; gap: 8px;
-  padding: 8px 14px; background: #eef6ff; border: 1px solid #c0d8f5;
-  border-radius: 999px; font-size: 12px; color: var(--ink2); font-weight: 600;
-  margin-top: 10px;
-}
-.preview-card { border: 1px solid var(--line); border-radius: 14px; overflow: hidden; margin-top: 12px; }
-.preview-head { padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; background: #f7faff; border-bottom: 1px solid var(--line); }
-.preview-head b { font-size: 13px; color: var(--ink2); }
-.preview-badge { background: #def7ec; color: #0f6b4e; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; }
-.preview-canvas-wrap { padding: 12px; display: flex; justify-content: center; background: #f9fbfd; }
-#dosya-preview { max-width: 100%; border-radius: 10px; }
 
 /* ── UYARI / MESAJ ── */
 .flash {
@@ -330,6 +306,41 @@ textarea { resize: vertical; min-height: 84px; line-height: 1.7; }
 /* ── PROGRESS ── */
 .progress-bar { height: 3px; background: var(--line); border-radius: 999px; margin-top: 20px; overflow: hidden; }
 .progress-fill { height: 100%; background: linear-gradient(90deg, var(--gold), var(--ink3)); border-radius: 999px; transition: width .3s ease; }
+
+/* ── FOTOĞRAF YÜKLEME ── */
+.foto-zone {
+  border: 2px dashed var(--line); border-radius: 14px; padding: 20px;
+  text-align: center; background: #fafcff; cursor: pointer;
+  transition: border .15s, background .15s; position: relative;
+}
+.foto-zone:hover, .foto-zone.dragover { border-color: var(--gold); background: #fffbf0; }
+.foto-zone-icon { font-size: 32px; margin-bottom: 8px; }
+.foto-zone p { font-size: 13px; color: var(--muted); margin: 0; }
+.foto-zone small { font-size: 11px; color: #aab; }
+#foto_dosya { display: none; }
+
+.ai-panel {
+  border: 1.5px solid rgba(201,168,76,.3);
+  border-radius: 14px; overflow: hidden; margin-top: 12px;
+}
+.ai-panel-head {
+  background: linear-gradient(135deg, var(--ink), var(--ink2));
+  padding: 11px 16px; display: flex; align-items: center; gap: 10px;
+}
+.ai-panel-head span { font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: rgba(201,168,76,.85); }
+.ai-status { margin-left: auto; font-size: 11px; color: rgba(255,255,255,.5); }
+.ai-thumb { width: 100%; max-height: 200px; object-fit: contain; display: block; background: #f5f8fc; }
+.ai-actions { padding: 12px 14px; display: flex; gap: 8px; flex-wrap: wrap; border-top: 1px solid var(--line); background: #fafcff; }
+
+.ai-loading {
+  padding: 20px; text-align: center; font-size: 13px; color: var(--muted);
+}
+.spinner {
+  width: 28px; height: 28px; border: 3px solid var(--line);
+  border-top-color: var(--gold); border-radius: 50%;
+  animation: spin .7s linear infinite; margin: 0 auto 10px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
 
 /* ── MOBILE ── */
 @media (max-width: 640px) {
@@ -426,6 +437,17 @@ textarea { resize: vertical; min-height: 84px; line-height: 1.7; }
           <div class="card-head-title">Kişi Bilgisi</div>
         </div>
         <div class="card-body">
+          <div class="grid2">
+            <div>
+              <label class="field-label">Başvuru Tarihi *</label>
+              <input id="basvuru_tarihi" type="text" placeholder="GG.AA.YYYY" oninput="hesaplaIlerleme()"/>
+            </div>
+            <div>
+              <label class="field-label">Başvuru No *</label>
+              <input id="basvuru_no" type="text" placeholder="2026-12345" oninput="hesaplaIlerleme()"/>
+            </div>
+          </div>
+
           <div>
             <label class="field-label">Adı Soyadı *</label>
             <input id="ad_soyad" type="text" placeholder="AHMET YILMAZ" oninput="hesaplaIlerleme()"/>
@@ -558,34 +580,41 @@ textarea { resize: vertical; min-height: 84px; line-height: 1.7; }
             <textarea id="diger" placeholder="Görüşmede öne çıkan diğer önemli bilgiler..."></textarea>
           </div>
 
-          <!-- Dosya -->
+          <!-- Fotoğraf Yükleme + AI -->
           <div>
-            <label class="field-label">Fotoğraf / PDF Eki</label>
-            <div class="file-zone" onclick="document.getElementById('foto_dosya').click()">
-              <div class="file-zone-icon">📎</div>
-              <p>Fotoğraf veya PDF seçmek için dokunun</p>
-              <small>Görsel (JPG, PNG) veya tek sayfalık PDF</small>
+            <label class="field-label">Dilekçe / Belge Fotoğrafı</label>
+            <div class="foto-zone" id="foto-zone" onclick="document.getElementById('foto_dosya').click()"
+                 ondragover="event.preventDefault();this.classList.add('dragover')"
+                 ondragleave="this.classList.remove('dragover')"
+                 ondrop="event.preventDefault();this.classList.remove('dragover');fotoSec(event.dataTransfer.files[0])">
+              <div class="foto-zone-icon">📷</div>
+              <p>Fotoğraf seçmek veya sürüklemek için dokunun</p>
+              <small>JPG, PNG — AI otomatik okur ve formu doldurur</small>
             </div>
-            <input id="foto_dosya" type="file" accept="image/*,.pdf,application/pdf"/>
-            <div id="dosya-pill" class="file-pill" style="display:none;">📎 <span id="dosya-pill-text"></span></div>
-            <div>
-              <label class="field-label" style="margin-top:12px;">Dosya Linki</label>
-              <input id="dosya_link" type="url" placeholder="Yükleme sonrası otomatik dolar"/>
-            </div>
-            <div id="preview-wrap" style="display:none;">
-              <div class="preview-card">
-                <div class="preview-head">
-                  <b>Önizleme</b>
-                  <span class="preview-badge" id="preview-badge">Hazır</span>
-                </div>
-                <div class="preview-canvas-wrap">
-                  <canvas id="dosya-preview"></canvas>
-                </div>
+            <input id="foto_dosya" type="file" accept="image/*"/>
+
+            <div id="ai-panel" class="ai-panel" style="display:none;">
+              <div class="ai-panel-head">
+                <span>🤖 AI Okuma</span>
+                <span class="ai-status" id="ai-status">Hazır</span>
+              </div>
+              <div id="ai-loading" class="ai-loading" style="display:none;">
+                <div class="spinner"></div>
+                Fotoğraf okunuyor, bilgiler dolduruluyor…
+              </div>
+              <img id="ai-thumb" class="ai-thumb" style="display:none;"/>
+              <div class="ai-actions" id="ai-actions" style="display:none;">
+                <button class="btn btn-gold btn-sm" onclick="aiOku()">🔄 Tekrar Oku</button>
+                <button class="btn btn-ghost btn-sm" onclick="fotoTemizle()">🗑️ Kaldır</button>
+                <span id="ai-link-wrap" style="margin-left:auto;font-size:11px;color:var(--muted);align-self:center;"></span>
               </div>
             </div>
-          </div>
 
-          <div id="upload-uyari" class="flash"></div>
+            <div style="margin-top:10px;">
+              <label class="field-label">Dosya Linki <span style="text-transform:none;letter-spacing:0;font-weight:400;color:#aab;">(otomatik dolar)</span></label>
+              <input id="dosya_link" type="url" placeholder="https://..." style="background:#f5f8fc;color:var(--muted);"/>
+            </div>
+          </div>
           <div id="form-mesaj" class="flash"></div>
 
           <div class="btn-row">
@@ -642,11 +671,7 @@ textarea { resize: vertical; min-height: 84px; line-height: 1.7; }
   const db  = getFirestore(app);
   const col = collection(db, "raporlar");
 
-  const pdfjsLib = window['pdfjs-dist/build/pdf'];
-  if (pdfjsLib?.GlobalWorkerOptions)
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-
-  let secili = null, cache = [], secilenler = new Set(), selectedUpload = null;
+  let secili = null, cache = [], secilenler = new Set();
 
   /* ── YARDIMCI ── */
   function bugun() {
@@ -690,7 +715,7 @@ textarea { resize: vertical; min-height: 84px; line-height: 1.7; }
 
   /* ── İLERLEME ── */
   function hesaplaIlerleme() {
-    const alanlar = ['ad_soyad','tarih','kisi','gelir','borc'];
+    const alanlar = ['basvuru_tarihi','basvuru_no','ad_soyad','tarih','kisi','gelir','borc'];
     const dolu = alanlar.filter(k => document.getElementById(k)?.value.trim()).length;
     const pct = Math.round((dolu/alanlar.length)*100);
     document.getElementById('progress').style.width = pct+'%';
@@ -720,6 +745,8 @@ textarea { resize: vertical; min-height: 84px; line-height: 1.7; }
   /* ── FORM ── */
   function getForm() {
     return {
+      basvuru_tarihi: g('basvuru_tarihi'),
+      basvuru_no:     g('basvuru_no'),
       ad_soyad:       g('ad_soyad'),
       tarih:          g('tarih'),
       talep:          talepMetni({talep_liste:seciliTalepGetir()}),
@@ -738,13 +765,12 @@ textarea { resize: vertical; min-height: 84px; line-height: 1.7; }
       belediye:       g('belediye'),
       diger:          g('diger'),
       dosya_link:     g('dosya_link'),
-      dosya_adi:      selectedUpload?.fileName||''
     };
   }
   function g(id){ return document.getElementById(id)?.value.trim()||''; }
 
   function setForm(d) {
-    ['ad_soyad','tarih','kisi','gelir','saglik','borc','diger','dosya_link'].forEach(k=>{
+    ['basvuru_tarihi','basvuru_no','ad_soyad','tarih','kisi','gelir','saglik','borc','diger','dosya_link'].forEach(k=>{
       const el = document.getElementById(k); if(el) el.value=d?.[k]||'';
     });
     setRadio('arac_durum',d?.arac_durum); toggleArac(d?.arac_durum||'yok');
@@ -756,8 +782,6 @@ textarea { resize: vertical; min-height: 84px; line-height: 1.7; }
     setRadio('belediye_durum',d?.belediye_durum); toggleBelediye(d?.belediye_durum||'yok');
     document.getElementById('belediye').value = d?.belediye||'';
     setTalep(d||{});
-    document.getElementById('foto_dosya').value='';
-    temizlePreview();
     hesaplaIlerleme();
   }
 
@@ -772,67 +796,8 @@ textarea { resize: vertical; min-height: 84px; line-height: 1.7; }
   }
 
   /* ── DOSYA ── */
-  function setDosyaPill(t) {
-    const w=document.getElementById('dosya-pill'), s=document.getElementById('dosya-pill-text');
-    if(!t){w.style.display='none';s.textContent='';return;}
     s.textContent=t; w.style.display='inline-flex';
   }
-  function temizlePreview() {
-    selectedUpload=null;
-    document.getElementById('preview-wrap').style.display='none';
-    setDosyaPill('');
-    const cv=document.getElementById('dosya-preview');
-    cv.getContext('2d').clearRect(0,0,cv.width||1,cv.height||1);
-  }
-  function drawPreview(blob) {
-    const cv=document.getElementById('dosya-preview'), ctx=cv.getContext('2d');
-    const url=URL.createObjectURL(blob);
-    const img=new Image();
-    img.onload=()=>{
-      const s=Math.min(1,720/img.width);
-      cv.width=Math.round(img.width*s); cv.height=Math.round(img.height*s);
-      ctx.drawImage(img,0,0,cv.width,cv.height);
-      document.getElementById('preview-wrap').style.display='block';
-      URL.revokeObjectURL(url);
-    };
-    img.src=url;
-  }
-  async function pdfToBlob(file) {
-    const arr=await file.arrayBuffer();
-    const pdf=await pdfjsLib.getDocument({data:arr}).promise;
-    const page=await pdf.getPage(1);
-    const vp=page.getViewport({scale:1.6});
-    const cv=document.createElement('canvas');
-    cv.width=vp.width; cv.height=vp.height;
-    await page.render({canvasContext:cv.getContext('2d'),viewport:vp}).promise;
-    return new Promise(r=>cv.toBlob(r,'image/png',.95));
-  }
-  async function handleFile() {
-    const file=document.getElementById('foto_dosya').files?.[0];
-    if(!file){temizlePreview();return;}
-    try {
-      document.getElementById('preview-badge').textContent='Hazırlanıyor…';
-      flash('upload-uyari','Dosya hazırlanıyor…');
-      if(file.type==='application/pdf'||file.name.toLowerCase().endsWith('.pdf')) {
-        const blob=await pdfToBlob(file);
-        selectedUpload={type:'pdf-render',fileName:file.name.replace(/\.pdf$/i,'')+'.png',originalName:file.name,blob};
-        drawPreview(blob); setDosyaPill('PDF: '+file.name);
-        document.getElementById('preview-badge').textContent='PDF ilk sayfa';
-        flash('upload-uyari','PDF hazır. Kaydet deyince yüklenecek.');
-      } else if(file.type.startsWith('image/')) {
-        selectedUpload={type:'image',fileName:file.name,originalName:file.name,blob:file};
-        drawPreview(file); setDosyaPill('Fotoğraf: '+file.name);
-        document.getElementById('preview-badge').textContent='Fotoğraf';
-        flash('upload-uyari','Fotoğraf hazır. Kaydet deyince yüklenecek.');
-      } else throw new Error('Sadece fotoğraf veya PDF seçebilirsiniz.');
-    } catch(err) { temizlePreview(); flash('upload-uyari',err.message||'Dosya hazırlanamadı.',false); }
-  }
-  async function imgbbYukle(blob,name='dosya.png') {
-    const fd=new FormData(); fd.append('image',blob,name); fd.append('name',name.replace(/\.[^.]+$/,''));
-    const res=await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_KEY}`,{method:'POST',body:fd});
-    const data=await res.json();
-    if(!res.ok||!data.success) throw new Error(data?.error?.message||'Yükleme başarısız');
-    return data.data.url;
   }
 
   /* ── VERİ ── */
@@ -849,15 +814,11 @@ textarea { resize: vertical; min-height: 84px; line-height: 1.7; }
 
   async function kaydet() {
     const form=getForm();
-    if(!form.ad_soyad){flash('form-mesaj','Adı Soyadı zorunludur!',false);return;}
+    if(!form.basvuru_tarihi){flash('form-mesaj','Başvuru Tarihi zorunludur!',false);return;}
+      if(!form.basvuru_no){flash('form-mesaj','Başvuru No zorunludur!',false);return;}
+      if(!form.ad_soyad){flash('form-mesaj','Adı Soyadı zorunludur!',false);return;}
     try {
-      if(selectedUpload?.blob) {
-        flash('upload-uyari','Dosya yükleniyor…');
-        const link=await imgbbYukle(selectedUpload.blob,selectedUpload.fileName||'dosya.png');
-        form.dosya_link=link; form.dosya_adi=selectedUpload.originalName||'';
-        document.getElementById('dosya_link').value=link;
-        flash('upload-uyari','Dosya yüklendi ✅');
-      } else { document.getElementById('upload-uyari').style.display='none'; }
+
       if(secili) {
         await updateDoc(doc(db,'raporlar',secili),{...form,updatedAt:serverTimestamp()});
         flash('form-mesaj','✅ Güncellendi!');
@@ -1076,6 +1037,150 @@ textarea { resize: vertical; min-height: 84px; line-height: 1.7; }
     document.getElementById('app').style.display='block';
   }
 
+  // ── FOTOĞRAF & AI ──────────────────────────────────────────────
+  const IMGBB_KEY = "a4bf9947bd3106b22e140266f63c713b";
+  let fotoBlob = null, fotoBase64 = null;
+
+  function fotoSec(file) {
+    if (!file || !file.type.startsWith('image/')) { alert('Lütfen bir fotoğraf seçin.'); return; }
+    fotoBlob = file;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      fotoBase64 = e.target.result; // data:image/...;base64,...
+      const thumb = document.getElementById('ai-thumb');
+      thumb.src = fotoBase64; thumb.style.display = 'block';
+      document.getElementById('ai-panel').style.display = 'block';
+      document.getElementById('ai-loading').style.display = 'none';
+      document.getElementById('ai-actions').style.display = 'flex';
+      document.getElementById('ai-status').textContent = 'Hazır';
+      // Otomatik oku
+      aiOku();
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function fotoTemizle() {
+    fotoBlob = null; fotoBase64 = null;
+    document.getElementById('foto_dosya').value = '';
+    document.getElementById('ai-panel').style.display = 'none';
+    document.getElementById('dosya_link').value = '';
+    document.getElementById('ai-link-wrap').textContent = '';
+  }
+
+  async function aiOku() {
+    if (!fotoBase64) return;
+    document.getElementById('ai-loading').style.display = 'block';
+    document.getElementById('ai-actions').style.display = 'none';
+    document.getElementById('ai-status').textContent = 'Okunuyor…';
+
+    try {
+      // 1. Claude API ile oku
+      const b64 = fotoBase64.split(',')[1];
+      const mediaType = fotoBase64.match(/data:(image\/[^;]+);/)?.[1] || 'image/jpeg';
+
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 1000,
+          messages: [{
+            role: "user",
+            content: [
+              { type: "image", source: { type: "base64", media_type: mediaType, data: b64 } },
+              { type: "text", text: `Bu bir Türk sosyal yardım dilekçesi veya başvuru belgesidir. Görseldeki tüm bilgileri oku ve SADECE aşağıdaki JSON formatında yanıt ver, başka hiçbir şey yazma:
+{
+  "ad_soyad": "",
+  "tc": "",
+  "dogum": "",
+  "cinsiyet": "",
+  "medeni": "",
+  "cocuk": "",
+  "meslek": "",
+  "adres": "",
+  "telefon": "",
+  "basvuru_tarihi": "",
+  "basvuru_no": "",
+  "talep": ""
+}
+Bulamadığın alanları boş bırak. Tarihleri GG.AA.YYYY formatında yaz. Ad soyadı BÜYÜK HARF yaz.` }
+            ]
+          }]
+        })
+      });
+
+      const data = await res.json();
+      const text = data.content?.map(c => c.text || '').join('') || '';
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) throw new Error('AI yanıtı okunamadı');
+
+      const bilgi = JSON.parse(jsonMatch[0]);
+
+      // Formu doldur (boş olanlara yaz, doluysa dokunma)
+      const map = {
+        'ad_soyad': bilgi.ad_soyad,
+        'tarih': bilgi.basvuru_tarihi,  // görüşme tarihi de olabilir
+        'kisi': bilgi.cocuk ? `${bilgi.cocuk} çocuk` : '',
+        'gelir': bilgi.meslek ? `Mesleği: ${bilgi.meslek}` : '',
+      };
+      // Özel alanlar
+      if (bilgi.basvuru_tarihi) document.getElementById('basvuru_tarihi').value = bilgi.basvuru_tarihi;
+      if (bilgi.basvuru_no)    document.getElementById('basvuru_no').value    = bilgi.basvuru_no;
+      if (bilgi.ad_soyad)      document.getElementById('ad_soyad').value      = bilgi.ad_soyad;
+      if (bilgi.talep)         { 
+        // Talep checkbox'larını işaretle
+        document.querySelectorAll('.talep-check').forEach(ch => {
+          if (bilgi.talep.toLowerCase().includes(ch.value.toLowerCase())) ch.checked = true;
+        });
+      }
+
+      // Ekstra bilgileri diger alanına yaz
+      const ekstra = [];
+      if (bilgi.tc)      ekstra.push('TC: ' + bilgi.tc);
+      if (bilgi.dogum)   ekstra.push('Doğum: ' + bilgi.dogum);
+      if (bilgi.cinsiyet) ekstra.push('Cinsiyet: ' + bilgi.cinsiyet);
+      if (bilgi.medeni)  ekstra.push('Medeni: ' + bilgi.medeni);
+      if (bilgi.adres)   ekstra.push('Adres: ' + bilgi.adres);
+      if (bilgi.telefon) ekstra.push('Tel: ' + bilgi.telefon);
+      if (ekstra.length) {
+        const digerEl = document.getElementById('diger');
+        if (!digerEl.value) digerEl.value = ekstra.join('
+');
+      }
+
+      document.getElementById('ai-status').textContent = '✅ Okundu';
+      flash('form-mesaj', '✅ AI bilgileri okudu! Kontrol edip tamamlayın.');
+
+      // 2. imgbb'ye yükle (paralel)
+      imgbbYukle();
+
+    } catch(err) {
+      document.getElementById('ai-status').textContent = '❌ Hata';
+      flash('form-mesaj', 'AI okuma hatası: ' + err.message, false);
+    } finally {
+      document.getElementById('ai-loading').style.display = 'none';
+      document.getElementById('ai-actions').style.display = 'flex';
+    }
+    hesaplaIlerleme();
+  }
+
+  async function imgbbYukle() {
+    if (!fotoBlob) return;
+    try {
+      document.getElementById('ai-link-wrap').textContent = '⏳ Yükleniyor…';
+      const fd = new FormData();
+      fd.append('image', fotoBlob, fotoBlob.name || 'foto.jpg');
+      const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_KEY}`, { method: 'POST', body: fd });
+      const data = await res.json();
+      if (!data.success) throw new Error(data?.error?.message || 'Yükleme başarısız');
+      const link = data.data.url;
+      document.getElementById('dosya_link').value = link;
+      document.getElementById('ai-link-wrap').textContent = '✅ Yüklendi';
+    } catch(err) {
+      document.getElementById('ai-link-wrap').textContent = '❌ ' + err.message;
+    }
+  }
+
   // Global export
   Object.assign(window,{
     kaydet,kopyala,yeniForm,ac,sil,tumunuSil,gosterTab,girisYap,
@@ -1089,8 +1194,8 @@ textarea { resize: vertical; min-height: 84px; line-height: 1.7; }
     document.getElementById('login-screen').style.display='none';
     document.getElementById('app').style.display='block';
   }
-  document.getElementById('foto_dosya').addEventListener('change',handleFile);
   document.getElementById('arama').addEventListener('input',renderListe);
+  document.getElementById('foto_dosya').addEventListener('change', e => { if(e.target.files[0]) fotoSec(e.target.files[0]); });
   document.getElementById('tarih').value=bugun();
   yukle();
 </script>

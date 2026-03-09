@@ -7,7 +7,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js">
 // ── GLOBAL EXPORT ──
 Object.assign(window, {
-  pGir, pSil,
+  pGir, pSil, medeniDegisti,
   gosterTab, talepDegisti, radioSec, toggleVar,
   fotoSec, kaydet, yeniForm, ac, sil,
   tumunuSil, tumunuSec, secimiTemizle, toggleSecim,
@@ -307,7 +307,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; b
           </div>
           <div class="field">
             <label>Medeni Durum *</label>
-            <select id="medeni">
+            <select id="medeni" onchange="medeniDegisti()">
               <option value="">Seçin…</option>
               <option>Bekar</option>
               <option>Evli</option>
@@ -388,6 +388,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; b
           </div>
         </div>
 
+        <div id="es-bilgi-alan">
         <div class="grid2">
           <div class="field">
             <label>Eşin Adı Soyadı</label>
@@ -408,12 +409,19 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; b
             <input id="cocuk_detay" type="text" placeholder="2 çocuk, 10 ve 14 yaş"/>
           </div>
         </div>
+        </div>
         <div class="field">
           <label>Çocuklar Okula Gidiyor mu?</label>
           <div class="toggle-group">
             <button class="tog-btn" id="okul-evet" onclick="toggleVar('okul','evet')">✅ Evet</button>
             <button class="tog-btn" id="okul-hayir" onclick="toggleVar('okul','hayir')">❌ Hayır</button>
             <button class="tog-btn" id="okul-yok" onclick="toggleVar('okul','yok')">➖ Çocuk Yok</button>
+          </div>
+        </div>
+        <div class="gizli" id="okul-sinif-alan">
+          <div class="field">
+            <label>Hangi Sınıfa Gidiyorlar?</label>
+            <input id="okul_sinif" type="text" placeholder="Örn: 1. sınıf ilkokul, 3. sınıf ortaokul…"/>
           </div>
         </div>
         <div class="field">
@@ -438,7 +446,13 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; b
         </div>
         <div class="field">
           <label>Fatura Borçları</label>
-          <input id="fatura_borc" type="text" placeholder="Örn: 1.000 TL elektrik, 500 TL su"/>
+          <div class="toggle-group">
+            <button class="tog-btn" id="fatura-var" onclick="toggleVar('fatura','var')">✅ Var</button>
+            <button class="tog-btn" id="fatura-yok" onclick="toggleVar('fatura','hayir')">❌ Yok</button>
+          </div>
+          <div class="gizli" id="fatura-alan">
+            <input id="fatura_borc" type="text" placeholder="Örn: 1.000 TL elektrik, 500 TL su" style="margin-top:8px;width:100%;padding:10px;border-radius:8px;border:1.5px solid #ddd;font-size:15px;"/>
+          </div>
         </div>
         <div class="field">
           <label>Çalışma / Gelir Durumu (Ek bilgi)</label>
@@ -625,7 +639,7 @@ try {
 
 // ── STATE ──
 let secili = null, cache = [], secilenler = new Set(), fotoBlob = null, fotoImgbbLink = "";
-let aracDurum = "", tapuDurum = "", sydvDurum = "", belDurum = "", okulDurum = "", konutDurum = "";
+let aracDurum = "", tapuDurum = "", sydvDurum = "", belDurum = "", okulDurum = "", konutDurum = "", faturaDurum = "";
 
 // ── YARDIMCI ──
 function bugun() { return new Date().toISOString().slice(0,10); }
@@ -669,6 +683,19 @@ function radioSec(tip, deger, btn) {
 }
 
 // ── SYDV / BELEDİYE TOGGLE ──
+function medeniDegisti() {
+  const val = document.getElementById("medeni").value;
+  const esAlan = document.getElementById("es-bilgi-alan");
+  // Bekar, Boşanmış, Dul ise eş bilgisi gizle
+  const esGizle = (val === "Bekar" || val === "Boşanmış" || val === "Dul" || val === "");
+  esAlan.style.display = esGizle ? "none" : "block";
+  if (esGizle) {
+    document.getElementById("es_ad").value = "";
+    document.getElementById("es_yas").value = "";
+    document.getElementById("es_meslek").value = "";
+  }
+}
+
 function toggleVar(tip, deger) {
   // SYDV ve BEL: standart evet/hayır/alan yapısı
   if (tip === "sydv" || tip === "bel") {
@@ -691,6 +718,23 @@ function toggleVar(tip, deger) {
     });
     const aktif = document.getElementById("okul-"+deger);
     if (aktif) aktif.classList.add(deger==="hayir" ? "active-hayir" : "active-evet");
+    // Evet seçilince sınıf alanı aç
+    const sinifAlan = document.getElementById("okul-sinif-alan");
+    if (sinifAlan) sinifAlan.classList.toggle("acik", deger === "evet");
+    return;
+  }
+  // FATURA
+  if (tip === "fatura") {
+    faturaDurum = deger;
+    ["var","hayir"].forEach(d => {
+      const b = document.getElementById("fatura-"+d);
+      if (b) b.classList.remove("active-evet","active-hayir");
+    });
+    const aktif = document.getElementById("fatura-"+deger);
+    if (aktif) aktif.classList.add(deger === "hayir" ? "active-hayir" : "active-evet");
+    const alan = document.getElementById("fatura-alan");
+    if (alan) alan.classList.toggle("acik", deger === "var");
+    if (deger === "hayir") { const i = document.getElementById("fatura_borc"); if(i) i.value=""; }
     return;
   }
   // KONUT: 3 butonlu
@@ -797,9 +841,11 @@ function getForm() {
     es_meslek:      document.getElementById("es_meslek")?.value.trim() || "",
     cocuk_detay:    document.getElementById("cocuk_detay")?.value.trim() || "",
     okul_durum:     okulDurum,
+    okul_sinif:     document.getElementById("okul_sinif")?.value.trim() || "",
     konut_durum:    konutDurum,
     kira_miktar:    document.getElementById("kira_miktar")?.value.trim() || "",
     kira_borcu:     document.getElementById("kira_borcu")?.value.trim() || "",
+    fatura_durum:   faturaDurum,
     fatura_borc:    document.getElementById("fatura_borc")?.value.trim() || "",
     cinsiyet:       document.getElementById("cinsiyet")?.value || "",
     cocuk:       document.getElementById("cocuk")?.value || "",
@@ -825,10 +871,25 @@ function setForm(f) {
   if (document.getElementById("es_meslek")) document.getElementById("es_meslek").value = f.es_meslek || "";
   if (document.getElementById("cocuk_detay")) document.getElementById("cocuk_detay").value = f.cocuk_detay || "";
   if (document.getElementById("kira_miktar")) document.getElementById("kira_miktar").value = f.kira_miktar || "";
+  // Fatura toggle restore
+  faturaDurum = f.fatura_durum || "";
+  ["var","hayir"].forEach(d => { const b = document.getElementById("fatura-"+d); if(b) b.classList.remove("active-evet","active-hayir"); });
+  if (faturaDurum) {
+    const fb = document.getElementById("fatura-"+faturaDurum);
+    if (fb) fb.classList.add(faturaDurum === "hayir" ? "active-hayir" : "active-evet");
+    const fa = document.getElementById("fatura-alan");
+    if (fa) fa.classList.toggle("acik", faturaDurum === "var");
+  }
   if (document.getElementById("kira_borcu")) document.getElementById("kira_borcu").value = f.kira_borcu || "";
   if (document.getElementById("fatura_borc")) document.getElementById("fatura_borc").value = f.fatura_borc || "";
   // Okul toggle
   okulDurum = f.okul_durum || ""; konutDurum = f.konut_durum || "";
+  if (document.getElementById("okul_sinif")) document.getElementById("okul_sinif").value = f.okul_sinif || "";
+  // Sınıf alanını göster/gizle
+  const sinifAlanSet = document.getElementById("okul-sinif-alan");
+  if (sinifAlanSet) sinifAlanSet.classList.toggle("acik", f.okul_durum === "evet");
+  // Medeni duruma göre eş alanını güncelle
+  medeniDegisti();
   ["okul","konut"].forEach(tip => {
     const durum = tip === "okul" ? okulDurum : konutDurum;
     document.querySelectorAll("#" + tip + "-evet, #" + tip + "-hayir, #" + tip + "-yok, #" + tip + "-kira, #" + tip + "-kendisi, #" + tip + "-akraba")
@@ -1073,15 +1134,23 @@ function oykuYaz(f) {
   // 4. Çocuk ve okul
   if (f.cocuk_detay) {
     c1 += ", " + f.cocuk_detay + " olduğunu";
-    if (f.okul_durum === "evet") c1 += ", çocuklarının okula gittiğini";
+    if (f.okul_durum === "evet") {
+      c1 += ", çocuklarının okula gittiğini";
+      if (f.okul_sinif) c1 += " (" + f.okul_sinif + ")";
+    }
     else if (f.okul_durum === "hayir") c1 += ", çocuklarının okula gitmediğini";
   } else if (f.cocuk && f.cocuk !== "-") {
     c1 += ", " + f.cocuk + " çocukları olduğunu";
-    if (f.okul_durum === "evet") c1 += ", çocuklarının okula gittiğini";
+    if (f.okul_durum === "evet") {
+      c1 += ", çocuklarının okula gittiğini";
+      if (f.okul_sinif) c1 += " (" + f.okul_sinif + ")";
+    }
   }
 
   // 5. Fatura borçları
-  if (f.fatura_borc && f.fatura_borc.trim()) {
+  if (f.fatura_durum === "hayir") {
+    c1 += ", fatura borçlarının olmadığını";
+  } else if (f.fatura_durum === "var" && f.fatura_borc && f.fatura_borc.trim()) {
     c1 += ", " + f.fatura_borc + " fatura borçları olduğunu";
   }
 
@@ -1191,11 +1260,11 @@ async function wordIndir(data) {
     kimlikSatiri("Adı Soyadı",            f.ad_soyad),
     kimlikSatiri("Cinsiyeti",             f.cinsiyet || "-"),
     kimlikSatiri("T.C. No",               f.tc || "-"),
-    kimlikSatiri("Doğum Tarihi",        f.dogum ? f.dogum.split("-").reverse().join(".") : "-"),
+    kimlikSatiri("Doğum Tarihi",          f.dogum ? f.dogum.split("-").reverse().join(".") : "-"),
     kimlikSatiri("Medeni Hali",           f.medeni || "-"),
     kimlikSatiri("Çocuk Sayısı",          f.cocuk || "-"),
     kimlikSatiri("Mesleği",               f.meslek || "-"),
-    kimlikSatiri("Kurumdan Talebi",     f.talep || "-"),
+    kimlikSatiri("Kurumdan Talebi",       f.talep || "-"),
     kimlikSatiri("Adres",                 f.adres || "-",  "\t\t\t\t"),
     kimlikSatiri("Tel No",                f.telefon || "-", "\t\t\t\t"),
     kimlikSatiri("Raporu Düzenleyen",     "Ozan Ersin DOĞAN – Sosyal Hizmet Uzmanı", "\t\t"),
@@ -1209,21 +1278,19 @@ async function wordIndir(data) {
       "\t" + (f.basvuru_tarihi ? trTarih(f.basvuru_tarihi) : bugunTarih) + " tarihli" +
       (f.basvuru_no ? " " + f.basvuru_no + " sayılı" : "") +
       " dilekçesinde " + (f.talep || "yardım").toLowerCase() +
-      " talep ettiğini belirtmiş, " +
+      " talep ettiğini belirtmiş," +
       bugunTarih + " tarihinde kendisi görüşülerek sosyal incelemesi yapılmıştır."
     ),
     bos(),
 
     // OLAYIN ÖYKÜSÜ
     bolumBasligi("OLAYIN ÖYKÜSÜ:"),
-    
-        normalMetin(oykuYaz(f)),
+    normalMetin(oykuYaz(f)),
     bos(),
 
     // DEĞERLENDİRME
     bolumBasligi("DEĞERLENDİRME:"),
-    
-        degSatiri("-Araç ve Tapu Kayıt Bilgileri:", degerlendirmeYaz(f).arac),
+    degSatiri("-Araç ve Tapu Kayıt Bilgileri:", degerlendirmeYaz(f).arac),
     degSatiri("-Kuşadası Kaymakamlığı SYDV\'den Alınan Bilgileri:", degerlendirmeYaz(f).sydv),
     degSatiri("-Belediyemizden Almış Olduğu Yardımlar:", degerlendirmeYaz(f).bel),
     ...(f.notlar ? [degSatiri("-Uzman Değerlendirmesi:", f.notlar)] : []),
@@ -1232,8 +1299,7 @@ async function wordIndir(data) {
 
     // SONUÇ
     bolumBasligi("SONUÇ:"),
-    
-        normalMetin(sonucYaz(f)),
+    normalMetin(sonucYaz(f)),
     bos(), bos(),
 
     // İMZA

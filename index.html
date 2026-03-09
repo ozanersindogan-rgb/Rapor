@@ -1191,11 +1191,11 @@ async function wordIndir(data) {
     kimlikSatiri("Adı Soyadı",            f.ad_soyad),
     kimlikSatiri("Cinsiyeti",             f.cinsiyet || "-"),
     kimlikSatiri("T.C. No",               f.tc || "-"),
-    kimlikSatiri("Doğum Tarihi",          f.dogum ? f.dogum.split("-").reverse().join(".") : "-"),
+    kimlikSatiri("Doğum Tarihi",        f.dogum ? f.dogum.split("-").reverse().join(".") : "-"),
     kimlikSatiri("Medeni Hali",           f.medeni || "-"),
     kimlikSatiri("Çocuk Sayısı",          f.cocuk || "-"),
     kimlikSatiri("Mesleği",               f.meslek || "-"),
-    kimlikSatiri("Kurumdan Talebi",       f.talep || "-"),
+    kimlikSatiri("Kurumdan Talebi",     f.talep || "-"),
     kimlikSatiri("Adres",                 f.adres || "-",  "\t\t\t\t"),
     kimlikSatiri("Tel No",                f.telefon || "-", "\t\t\t\t"),
     kimlikSatiri("Raporu Düzenleyen",     "Ozan Ersin DOĞAN – Sosyal Hizmet Uzmanı", "\t\t"),
@@ -1216,12 +1216,14 @@ async function wordIndir(data) {
 
     // OLAYIN ÖYKÜSÜ
     bolumBasligi("OLAYIN ÖYKÜSÜ:"),
-    normalMetin(oykuYaz(f)),
+    
+        normalMetin(oykuYaz(f)),
     bos(),
 
     // DEĞERLENDİRME
     bolumBasligi("DEĞERLENDİRME:"),
-    degSatiri("-Araç ve Tapu Kayıt Bilgileri:", degerlendirmeYaz(f).arac),
+    
+        degSatiri("-Araç ve Tapu Kayıt Bilgileri:", degerlendirmeYaz(f).arac),
     degSatiri("-Kuşadası Kaymakamlığı SYDV\'den Alınan Bilgileri:", degerlendirmeYaz(f).sydv),
     degSatiri("-Belediyemizden Almış Olduğu Yardımlar:", degerlendirmeYaz(f).bel),
     ...(f.notlar ? [degSatiri("-Uzman Değerlendirmesi:", f.notlar)] : []),
@@ -1230,7 +1232,8 @@ async function wordIndir(data) {
 
     // SONUÇ
     bolumBasligi("SONUÇ:"),
-    normalMetin(sonucYaz(f)),
+    
+        normalMetin(sonucYaz(f)),
     bos(), bos(),
 
     // İMZA

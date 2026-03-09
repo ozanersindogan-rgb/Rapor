@@ -448,7 +448,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; b
           <label>Fatura Borçları</label>
           <div class="toggle-group">
             <button class="tog-btn" id="fatura-var" onclick="toggleVar('fatura','var')">✅ Var</button>
-            <button class="tog-btn" id="fatura-yok" onclick="toggleVar('fatura','hayir')">❌ Yok</button>
+            <button class="tog-btn" id="fatura-hayir" onclick="toggleVar('fatura','hayir')">❌ Yok</button>
           </div>
           <div class="gizli" id="fatura-alan">
             <input id="fatura_borc" type="text" placeholder="Örn: 1.000 TL elektrik, 500 TL su" style="margin-top:8px;width:100%;padding:10px;border-radius:8px;border:1.5px solid #ddd;font-size:15px;"/>
@@ -1278,7 +1278,7 @@ async function wordIndir(data) {
       "\t" + (f.basvuru_tarihi ? trTarih(f.basvuru_tarihi) : bugunTarih) + " tarihli" +
       (f.basvuru_no ? " " + f.basvuru_no + " sayılı" : "") +
       " dilekçesinde " + (f.talep || "yardım").toLowerCase() +
-      " talep ettiğini belirtmiş," +
+      " talep ettiğini belirtmiş, kişinin ikamet adresinde " +
       bugunTarih + " tarihinde kendisi görüşülerek sosyal incelemesi yapılmıştır."
     ),
     bos(),

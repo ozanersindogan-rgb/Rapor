@@ -7,6 +7,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <style>
 :root {
   --navy: #1a2744;
@@ -545,7 +546,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; b
             🤖 Fotoğraftan Formu Doldur / Rapor Yaz
           </button>
           <div style="margin-top:6px;font-size:11px;color:var(--muted);text-align:center;">
-            📸 Fotoğraf yüklersen → tüm formu otomatik doldurur<br>
+            📸 Fotoğraf yüklersen → içindeki metni okuyup uygun alanları doldurmaya çalışır<br>
             📝 Fotoğraf yoksa → mevcut bilgilerden gözlem yazar
           </div>
           <div id="ai-rapor-durum" style="display:none;margin-top:10px;padding:12px;background:#f8f9fc;border-radius:10px;border:1.5px solid var(--border);font-size:13px;color:var(--text);line-height:1.6;white-space:pre-wrap;"></div>
@@ -839,51 +840,125 @@ function toggleVar(tip, deger) {
 
 // ── FOTOĞRAF YÜKLEME ──
 async function fotoSec() {
-  const file = document.getElementById("foto-input").files?.[0];
+  const input = document.getElementById("foto-input");
+  const file = input?.files?.[0];
   if (!file) return;
+
   const durum = document.getElementById("foto-durum");
   const preview = document.getElementById("foto-preview");
   const linkEl = document.getElementById("dosya_link");
+  const ikon = document.getElementById("foto-ikon");
+  const yazi = document.getElementById("foto-yazi");
+
+  fotoBlob = file;
+  fotoImgbbLink = "";
+  if (linkEl) linkEl.value = "";
 
   durum.className = "foto-durum yukleniyor";
   durum.style.display = "block";
-  durum.textContent = "⏳ Yükleniyor…";
-  document.getElementById("foto-yazi").textContent = "📎 " + file.name;
-  document.getElementById("foto-ikon").textContent = "";
+  yazi.textContent = "📎 " + file.name;
+  ikon.textContent = file.type.startsWith("image/") ? "🖼️" : "📄";
 
-  const reader = new FileReader();
-  reader.onload = async function(e) {
-    const dataUrl = e.target.result;
-    // Önizleme (fotoğraflar için)
-    if (file.type.startsWith("image/")) {
-      preview.src = dataUrl;
-      preview.style.display = "block";
-    }
-    // imgbb'ye base64 gönder
-    try {
-      const b64 = dataUrl.split(",")[1];
-      const fd  = new FormData();
-      fd.append("image", b64);
-      const res  = await fetch("https://api.imgbb.com/1/upload?key=" + IMGBB_KEY, { method: "POST", body: fd });
-      const data = await res.json();
-      if (data && data.success) {
-        fotoImgbbLink = data.data.url;
-        linkEl.value  = fotoImgbbLink;
-        fotoBlob = file;
-        durum.className = "foto-durum basarili";
-        durum.textContent = "✅ Yüklendi: " + data.data.url;
-      } else {
-        throw new Error((data && data.error && data.error.message) || "Başarısız");
+  if (file.type.startsWith("image/")) {
+    const objectUrl = URL.createObjectURL(file);
+    preview.src = objectUrl;
+    preview.style.display = "block";
+    durum.className = "foto-durum basarili";
+    durum.textContent = "✅ Fotoğraf seçildi. İstersen şimdi AI ile rapor oluşturabilirsin.";
+  } else if (file.type === "application/pdf") {
+    preview.removeAttribute("src");
+    preview.style.display = "none";
+    durum.className = "foto-durum basarili";
+    durum.textContent = "✅ PDF seçildi. Not: tarayıcı içinde otomatik okuma şu an sadece fotoğraflarda daha sağlıklı çalışır.";
+  } else {
+    preview.removeAttribute("src");
+    preview.style.display = "none";
+    durum.className = "foto-durum hata";
+    durum.textContent = "⚠️ Desteklenmeyen dosya türü. JPG, PNG veya PDF seçin.";
+  }
+}
+
+async function gorseldenMetinOku(file) {
+  if (!file) return "";
+  if (!file.type.startsWith("image/")) {
+    throw new Error("Şu anda otomatik okuma için fotoğraf yükleyin. PDF otomatik okuma bu sürümde desteklenmiyor.");
+  }
+  if (typeof Tesseract === "undefined") {
+    throw new Error("OCR bileşeni yüklenemedi. İnternet bağlantısını kontrol edin.");
+  }
+
+  const durumEl = document.getElementById("ai-rapor-durum");
+  const objectUrl = URL.createObjectURL(file);
+  try {
+    const result = await Tesseract.recognize(objectUrl, "tur+eng", {
+      logger: (m) => {
+        if (durumEl && m.status) {
+          const yuzde = typeof m.progress === "number" ? Math.round(m.progress * 100) : 0;
+          durumEl.textContent = "📖 Fotoğraf okunuyor… " + yuzde + "%";
+        }
       }
-    } catch(err) {
-      durum.className = "foto-durum hata";
-      durum.textContent = "⚠️ Link alınamadı ama dosya seçildi. (" + err.message + ")";
-      fotoBlob = file;
-      fotoImgbbLink = "";
-      linkEl.value = "";
+    });
+    return (result?.data?.text || "").trim();
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
+
+function ocrMetnindenAlanlariDoldur(text) {
+  if (!text) return [];
+  const set = (id, value) => {
+    const el = document.getElementById(id);
+    if (el && value && !el.value.trim()) {
+      el.value = value.trim();
+      return true;
     }
+    return false;
   };
-  reader.readAsDataURL(file);
+  const doldurulan = [];
+  const temiz = text.replace(/
+/g, "");
+
+  const tc = temiz.match(/\d{11}/);
+  if (tc && set("tc", tc[0])) doldurulan.push("T.C.");
+
+  const tel = temiz.match(/(?:\+?90\s*)?(?:0?5\d{2}[\s.-]*\d{3}[\s.-]*\d{2}[\s.-]*\d{2})/);
+  if (tel && set("telefon", tel[0].replace(/[^\d+]/g, ""))) doldurulan.push("Telefon");
+
+  const dogum = temiz.match(/(\d{2}[./-]\d{2}[./-]\d{4}|\d{4}[./-]\d{2}[./-]\d{2})/);
+  if (dogum) {
+    let raw = dogum[0].replace(/\./g, "-").replace(/\//g, "-");
+    let val = raw;
+    if (/^\d{2}-\d{2}-\d{4}$/.test(raw)) {
+      const [dd,mm,yyyy] = raw.split("-");
+      val = `${yyyy}-${mm}-${dd}`;
+    }
+    if (set("dogum", val)) doldurulan.push("Doğum Tarihi");
+  }
+
+  const medeni = temiz.match(/(Bekar|Evli|Boşanmış|Bosanmis|Dul)/i);
+  if (medeni) {
+    const val = medeni[1].replace("Bosanmis","Boşanmış");
+    if (set("medeni", val)) doldurulan.push("Medeni Durum");
+  }
+
+  const cinsiyet = temiz.match(/(Kadın|Kadin|Erkek)/i);
+  if (cinsiyet) {
+    const val = cinsiyet[1].replace("Kadin","Kadın");
+    if (set("cinsiyet", val)) doldurulan.push("Cinsiyet");
+  }
+
+  const satirlar = temiz.split("
+").map(s => s.trim()).filter(Boolean);
+  for (const s of satirlar) {
+    if (!document.getElementById("ad_soyad")?.value.trim() && /^[A-ZÇĞİÖŞÜ\s]{5,}$/.test(s) && !/T[.]?C|NO|TEL|ADRES|BAŞVURU|BASVURU/i.test(s)) {
+      if (set("ad_soyad", s)) { doldurulan.push("Ad Soyad"); break; }
+    }
+  }
+
+  const adresSatiri = satirlar.find(s => /mah|mahalle|sok|cad|no|apt|daire|blok/i.test(s));
+  if (adresSatiri && set("adres", adresSatiri)) doldurulan.push("Adres");
+
+  return doldurulan;
 }
 
 // ── FORM GET/SET ──
@@ -1537,25 +1612,47 @@ async function aiRaporOlustur() {
   } catch (e) {}
 
   btn.disabled = true;
-  btn.textContent = "⏳ Rapor hazırlanıyor…";
+  btn.textContent = fotoFile ? "⏳ Fotoğraf okunuyor…" : "⏳ Rapor hazırlanıyor…";
   durumEl.style.display = "block";
   uygulaRow.style.display = "none";
+  durumEl.style.background = "#f0f4ff";
+  durumEl.style.border = "1.5px solid #c7d2fe";
+  durumEl.style.color = "#3730a3";
+  durumEl.textContent = fotoFile
+    ? "📸 Fotoğraf okunuyor, alanlar çıkarılıyor…"
+    : "📝 Mevcut bilgilerden rapor hazırlanıyor…";
 
   try {
+    let ocrText = "";
+    let doldurulan = [];
+
+    if (fotoFile) {
+      ocrText = await gorseldenMetinOku(fotoFile);
+      doldurulan = ocrMetnindenAlanlariDoldur(ocrText);
+      Object.assign(f, getForm());
+    }
+
+    aiRaporMetni = yerelRaporMetniOlustur(f);
+    if (ocrText) {
+      aiRaporMetni += "\n\nBelge özeti: Fotoğraftan okunabilen metin incelenmiş, uygun görülen alanlar forma aktarılmıştır.";
+    }
+
+    durumEl.style.background = "#ecfdf5";
+    durumEl.style.border = "1.5px solid #6ee7b7";
+    durumEl.style.color = "#065f46";
+    durumEl.textContent = fotoFile
+      ? (doldurulan.length
+          ? "✅ Fotoğraf okundu ve şu alanlar dolduruldu: " + doldurulan.join(", ") + "\n\nOluşturulan uzman gözlemi:\n\n" + aiRaporMetni
+          : "⚠️ Fotoğraf yüklendi ve metin okunmaya çalışıldı ancak net alan çıkarılamadı. Yine de mevcut verilerden uzman gözlemi oluşturuldu:\n\n" + aiRaporMetni)
+      : "ℹ️ Mevcut form verilerinden uzman gözlemi oluşturuldu:\n\n" + aiRaporMetni;
+    uygulaRow.style.display = "block";
+  } catch (err) {
     aiRaporMetni = yerelRaporMetniOlustur(f);
     durumEl.style.background = "#fff7e6";
     durumEl.style.border = "1.5px solid #f3d08a";
     durumEl.style.color = "#8a5b00";
-    durumEl.textContent = fotoFile
-      ? "⚠️ Fotoğraf yüklü olsa da tarayıcıdan doğrudan AI servisine erişim engellendiği için fotoğraftan otomatik okuma yapılamadı. Mevcut form verilerinden yerel rapor oluşturuldu:\n\n" + aiRaporMetni
-      : "ℹ️ Mevcut form verilerinden yerel rapor oluşturuldu:\n\n" + aiRaporMetni;
+    durumEl.textContent = "⚠️ Fotoğraftan otomatik okuma tamamlanamadı: " + err.message + "\n\nMevcut bilgilerden yine de uzman gözlemi oluşturuldu:\n\n" + aiRaporMetni;
     uygulaRow.style.display = "block";
-  } catch (err) {
-    durumEl.style.background = "#fef2f2";
-    durumEl.style.border = "1.5px solid #fca5a5";
-    durumEl.style.color = "#991b1b";
-    durumEl.textContent = "⚠️ Hata: " + err.message;
-    aiRaporMetni = "";
   } finally {
     btn.disabled = false;
     btn.textContent = "🤖 Fotoğraftan Formu Doldur / Rapor Yaz";

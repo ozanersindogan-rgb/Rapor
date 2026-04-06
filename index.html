@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
-<title>SİR – Kuşadası Belediyesi Ozan</title>
+<title>SİR – Kuşadası Belediyesi</title>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
@@ -681,6 +681,8 @@ function yerelRaporMetniOlustur(f) {
   const talep = f.talep ? "Vatandaşın talebi " + f.talep + " olarak değerlendirilmiştir." : "";
   if (talep) bolumler.push(talep);
   return bolumler.filter(Boolean).join("\n\n").trim() || "Uzman gözlemi oluşturulamadı.";
+}
+
 // ── PIN ──
 let _pin = "";
 let aktifKullanici = "";
@@ -915,16 +917,15 @@ function ocrMetnindenAlanlariDoldur(text) {
     return false;
   };
   const doldurulan = [];
-  const temiz = text.replace(/
-/g, "");
+  const temiz = text.replace(/\r/g, "");
 
-  const tc = temiz.match(/\d{11}/);
+  const tc = temiz.match(/\b\d{11}\b/);
   if (tc && set("tc", tc[0])) doldurulan.push("T.C.");
 
   const tel = temiz.match(/(?:\+?90\s*)?(?:0?5\d{2}[\s.-]*\d{3}[\s.-]*\d{2}[\s.-]*\d{2})/);
   if (tel && set("telefon", tel[0].replace(/[^\d+]/g, ""))) doldurulan.push("Telefon");
 
-  const dogum = temiz.match(/(\d{2}[./-]\d{2}[./-]\d{4}|\d{4}[./-]\d{2}[./-]\d{2})/);
+  const dogum = temiz.match(/\b(\d{2}[./-]\d{2}[./-]\d{4}|\d{4}[./-]\d{2}[./-]\d{2})\b/);
   if (dogum) {
     let raw = dogum[0].replace(/\./g, "-").replace(/\//g, "-");
     let val = raw;
@@ -935,20 +936,19 @@ function ocrMetnindenAlanlariDoldur(text) {
     if (set("dogum", val)) doldurulan.push("Doğum Tarihi");
   }
 
-  const medeni = temiz.match(/(Bekar|Evli|Boşanmış|Bosanmis|Dul)/i);
+  const medeni = temiz.match(/\b(Bekar|Evli|Boşanmış|Bosanmis|Dul)\b/i);
   if (medeni) {
     const val = medeni[1].replace("Bosanmis","Boşanmış");
     if (set("medeni", val)) doldurulan.push("Medeni Durum");
   }
 
-  const cinsiyet = temiz.match(/(Kadın|Kadin|Erkek)/i);
+  const cinsiyet = temiz.match(/\b(Kadın|Kadin|Erkek)\b/i);
   if (cinsiyet) {
     const val = cinsiyet[1].replace("Kadin","Kadın");
     if (set("cinsiyet", val)) doldurulan.push("Cinsiyet");
   }
 
-  const satirlar = temiz.split("
-").map(s => s.trim()).filter(Boolean);
+  const satirlar = temiz.split(/\n+/).map(s => s.trim()).filter(Boolean);
   for (const s of satirlar) {
     if (!document.getElementById("ad_soyad")?.value.trim() && /^[A-ZÇĞİÖŞÜ\s]{5,}$/.test(s) && !/T[.]?C|NO|TEL|ADRES|BAŞVURU|BASVURU/i.test(s)) {
       if (set("ad_soyad", s)) { doldurulan.push("Ad Soyad"); break; }
@@ -1714,7 +1714,7 @@ window.wordIndir = wordIndir;
 window.wordIndirById = wordIndirById;
 window.secilenWordIndir = secilenWordIndir;
 window.aiRaporOlustur = aiRaporOlustur;
-window.aiRaporUygula = aiRaporUygula;}
+window.aiRaporUygula = aiRaporUygula;
 
 </script>
 </body>

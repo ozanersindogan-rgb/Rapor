@@ -1632,5 +1632,19 @@ window.aiRaporOlustur = aiRaporOlustur;
 window.aiRaporUygula = aiRaporUygula;}
 
 </script>
+<script>
+function kullanicisecim(kullanici) {
+  console.log("Seçilen kullanıcı:", kullanici);
+
+  localStorage.setItem("sir_kullanici", kullanici);
+
+  // giriş ekranını kapat
+  const pin = document.getElementById("pin-ekran");
+  if (pin) pin.style.display = "none";
+
+  // sayfayı yenile (temiz state)
+  location.reload();
+}
+</script>
 </body>
 </html>

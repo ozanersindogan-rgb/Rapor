@@ -8,10 +8,12 @@
 // ── GLOBAL EXPORT ──
 Object.assign(window, {
   pGir, pSil, medeniDegisti,
+  kullanicisecim, cikisYap,
   gosterTab, talepDegisti, radioSec, toggleVar,
   fotoSec, kaydet, yeniForm, ac, sil,
   tumunuSil, tumunuSec, secimiTemizle, toggleSecim,
-  wordIndir, wordIndirById, secilenWordIndir
+  wordIndir, wordIndirById, secilenWordIndir,
+  aiRaporOlustur, aiRaporUygula
 });
 
 </script>
@@ -215,6 +217,25 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; b
 .pin-sil { color: rgba(255,255,255,.4); font-size: 18px; }
 .pin-hata { color: #f87171; font-size: 12px; padding: 8px; min-height: 32px; }
 
+/* ── KULLANICI BUTONU ── */
+.kullanici-btn {
+  display: flex; align-items: center; gap: 12px;
+  background: rgba(255,255,255,.07); border: 1.5px solid rgba(255,255,255,.15);
+  border-radius: 14px; padding: 14px 16px; cursor: pointer;
+  transition: all .2s; width: 100%; text-align: left;
+}
+.kullanici-btn:hover, .kullanici-btn:active {
+  background: rgba(201,168,76,.2); border-color: var(--gold);
+}
+.kb-avatar {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--gold), var(--gold2));
+  color: var(--navy); font-size: 14px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.kb-isim { color: #fff; font-size: 15px; font-weight: 700; display: block; }
+.kb-unvan { color: rgba(255,255,255,.5); font-size: 11px; display: block; margin-top: 2px; }
+
 @media (max-width: 420px) {
   .grid2 { grid-template-columns: 1fr; }
   .talep-grid { grid-template-columns: 1fr 1fr; }
@@ -225,7 +246,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; b
 </head>
 <body>
 
-<!-- ── PİN EKRANI ── -->
+<!-- ── KULLANICI GİRİŞİ ── -->
 <div id="pin-ekran">
   <div class="pin-kart">
     <div class="pin-ust">
@@ -233,26 +254,21 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; b
       <div class="pin-baslik">SİR Sistemi</div>
       <div class="pin-alt">Kuşadası Belediyesi</div>
     </div>
-    <div class="pin-dots">
-      <div class="pin-dot" id="pd0"></div>
-      <div class="pin-dot" id="pd1"></div>
-      <div class="pin-dot" id="pd2"></div>
-      <div class="pin-dot" id="pd3"></div>
+    <div style="padding:20px 16px 24px;">
+      <p style="color:rgba(255,255,255,.6);font-size:12px;letter-spacing:1px;text-transform:uppercase;text-align:center;margin-bottom:16px;">Kullanıcı Seçin</p>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <button class="kullanici-btn" onclick="kullanicisecim('Ozan Ersin DOĞAN')">
+          <span class="kb-avatar">OE</span>
+          <span class="kb-isim">Ozan Ersin DOĞAN</span>
+          <span class="kb-unvan">Sosyal Hizmet Uzmanı</span>
+        </button>
+        <button class="kullanici-btn" onclick="kullanicisecim('Aybüke')">
+          <span class="kb-avatar">AY</span>
+          <span class="kb-isim">Aybüke</span>
+          <span class="kb-unvan">Sosyal Hizmet Uzmanı</span>
+        </button>
+      </div>
     </div>
-    <div class="pin-grid">
-      <button class="pin-tuş" onclick="pGir('1')">1</button>
-      <button class="pin-tuş" onclick="pGir('2')">2</button>
-      <button class="pin-tuş" onclick="pGir('3')">3</button>
-      <button class="pin-tuş" onclick="pGir('4')">4</button>
-      <button class="pin-tuş" onclick="pGir('5')">5</button>
-      <button class="pin-tuş" onclick="pGir('6')">6</button>
-      <button class="pin-tuş" onclick="pGir('7')">7</button>
-      <button class="pin-tuş" onclick="pGir('8')">8</button>
-      <button class="pin-tuş" onclick="pGir('9')">9</button>
-      <button class="pin-tuş" onclick="pGir('0')">0</button>
-      <button class="pin-tuş pin-sil" onclick="pSil()">⌫</button>
-    </div>
-    <div class="pin-hata" id="pin-hata"></div>
   </div>
 </div>
 
@@ -267,6 +283,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; b
         <strong>SİR Sistemi</strong>
         <span>Kuşadası Belediyesi</span>
       </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div style="background:rgba(255,255,255,.1);border-radius:20px;padding:4px 12px;color:#fff;font-size:12px;font-weight:600;" id="kullanici-badge">—</div>
+      <button onclick="cikisYap()" style="background:rgba(255,255,255,.1);border:none;border-radius:8px;color:rgba(255,255,255,.7);font-size:11px;padding:5px 10px;cursor:pointer;" title="Çıkış">↩</button>
     </div>
   </nav>
 
@@ -363,10 +383,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; b
             <label>Başvuru No *</label>
             <input id="basvuru_no" type="text" placeholder="Örn: 2026-1340"/>
           </div>
-          <div class="field">
-            <label>Başvurucu Yaşı</label>
-            <input id="yas" type="number" placeholder="Yaş" min="1" max="120"/>
-          </div>
+
         </div>
 
         <div class="field">
@@ -455,16 +472,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; b
           </div>
         </div>
         <div class="field">
-          <label>Çalışma / Gelir Durumu (Ek bilgi)</label>
-          <textarea id="gelir" rows="2" placeholder="Başvurucunun çalışma/gelir durumu…"></textarea>
-        </div>
-        <div class="field">
-          <label>Sağlık / Engel Durumu</label>
-          <textarea id="saglik" rows="2" placeholder="Bilinen hastalık veya engellilik…"></textarea>
-        </div>
-        <div class="field">
-          <label>Konut / Kira / Borç</label>
-          <textarea id="borc" rows="2" placeholder="Kira 8.000 TL, elektrik borcu 1.200 TL…"></textarea>
+          <label>🔍 Sosyal Hizmet Uzmanı Gözlemi</label>
+          <textarea id="uzman_gozlemi" rows="6" placeholder="Vatandaşın genel durumu, yaşam koşulları, sağlık/engel bilgisi, gelir/çalışma durumu, öne çıkan ihtiyaçlar ve uzman değerlendirmesi…"></textarea>
         </div>
       </div>
     </div>
@@ -525,12 +534,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; b
           </div>
         </div>
 
-        <!-- GENEL NOTLAR -->
-        <div class="field">
-          <label>Genel Notlar / Değerlendirme</label>
-          <textarea id="notlar" rows="3" placeholder="Sosyal hizmet uzmanının değerlendirmesi…"></textarea>
-        </div>
-
         <!-- FOTOĞRAF & PDF YÜKLEME -->
         <div class="field">
           <label>Belge / Fotoğraf Yükleme</label>
@@ -545,6 +548,17 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; b
           <div class="field" style="margin-top:8px;">
             <label>Belge Linki</label>
             <input id="dosya_link" type="url" placeholder="Yükleme sonrası otomatik dolar" readonly/>
+          </div>
+        </div>
+
+        <!-- AI RAPOR OLUŞTUR -->
+        <div style="margin-top:4px;">
+          <button class="btn btn-gold btn-block" onclick="aiRaporOlustur()" id="ai-rapor-btn">
+            🤖 AI ile Rapor Notu Oluştur
+          </button>
+          <div id="ai-rapor-durum" style="display:none;margin-top:10px;padding:12px;background:#f8f9fc;border-radius:10px;border:1.5px solid var(--border);font-size:13px;color:var(--text);line-height:1.6;white-space:pre-wrap;"></div>
+          <div style="margin-top:8px;display:none;" id="ai-rapor-uygula-row">
+            <button class="btn btn-green btn-block" onclick="aiRaporUygula()">✅ Bu Metni Uzman Gözlemine Uygula</button>
           </div>
         </div>
       </div>
@@ -598,6 +612,7 @@ const col = db.collection("raporlar");
 
 // ── PIN ──
 let _pin = "";
+let aktifKullanici = "";
 function pGir(r) {
   if (_pin.length >= 4) return;
   _pin += r; _pinGuncelle();
@@ -624,14 +639,21 @@ function _pinKontrol() {
     setTimeout(() => { _pinGuncelle(); document.getElementById("pin-hata").textContent = ""; }, 800);
   }
 }
-document.addEventListener("keydown", e => {
-  if (document.getElementById("pin-ekran").style.display === "none") return;
-  if (e.key >= "0" && e.key <= "9") pGir(e.key);
-  if (e.key === "Backspace") pSil();
-});
-// Daha önce girilmiş mi?
+function kullanicisecim(isim) {
+  aktifKullanici = isim;
+  try { localStorage.setItem("sir_kullanici", isim); } catch(e) {}
+  document.getElementById("pin-ekran").style.display = "none";
+  document.getElementById("app").style.display = "block";
+  // Nav'da kullanıcı adını göster
+  const badge = document.getElementById("kullanici-badge");
+  if (badge) badge.textContent = isim.split(" ")[0];
+  appBaslat();
+}
+// Daha önce seçilmiş mi?
 try {
-  if (localStorage.getItem("sir_pin") === PIN_KODU) {
+  const kaydedilen = localStorage.getItem("sir_kullanici");
+  if (kaydedilen) {
+    aktifKullanici = kaydedilen;
     document.getElementById("pin-ekran").style.display = "none";
     document.getElementById("app").style.display = "block";
   }
@@ -820,10 +842,7 @@ function getForm() {
     basvuru_no:  document.getElementById("basvuru_no").value.trim(),
     talep:       talep.join(", "),
     diger_talep: document.getElementById("diger_talep").value.trim(),
-    kisi:        document.getElementById("kisi")?.value.trim() || "",
-    gelir:       document.getElementById("gelir")?.value.trim() || "",
-    saglik:      document.getElementById("saglik")?.value.trim() || "",
-    borc:        document.getElementById("borc")?.value.trim() || "",
+    uzman_gozlemi: document.getElementById("uzman_gozlemi")?.value.trim() || "",
     arac:        aracDurum,
     arac_not:    document.getElementById("arac_not").value.trim(),
     tapu:        tapuDurum,
@@ -835,7 +854,7 @@ function getForm() {
     notlar:      document.getElementById("notlar").value.trim(),
     dosya_link:     fotoImgbbLink || document.getElementById("dosya_link").value.trim(),
     basvuru_tarihi: document.getElementById("basvuru_tarihi")?.value || "",
-    yas:            document.getElementById("yas")?.value || "",
+
     es_ad:          document.getElementById("es_ad")?.value.trim() || "",
     es_yas:         document.getElementById("es_yas")?.value || "",
     es_meslek:      document.getElementById("es_meslek")?.value.trim() || "",
@@ -857,15 +876,15 @@ function setForm(f) {
   set("ad_soyad", f.ad_soyad); set("tc", f.tc); set("dogum", f.dogum);
   set("telefon", f.telefon); set("adres", f.adres);
   set("tarih", f.tarih || bugun()); set("basvuru_no", f.basvuru_no);
-  set("diger_talep", f.diger_talep); set("kisi", f.kisi); set("gelir", f.gelir);
-  set("saglik", f.saglik); set("borc", f.borc);
+  set("diger_talep", f.diger_talep);
+  set("uzman_gozlemi", f.uzman_gozlemi);
   set("arac_not", f.arac_not); set("tapu_not", f.tapu_not);
   set("sydv", f.sydv); set("belediye", f.belediye);
   set("notlar", f.notlar); set("dosya_link", f.dosya_link);
   document.getElementById("medeni").value = f.medeni || "";
   if (document.getElementById("cinsiyet"))   document.getElementById("cinsiyet").value   = f.cinsiyet || "";
   if (document.getElementById("basvuru_tarihi")) document.getElementById("basvuru_tarihi").value = f.basvuru_tarihi || "";
-  if (document.getElementById("yas"))       document.getElementById("yas").value       = f.yas || "";
+
   if (document.getElementById("es_ad"))     document.getElementById("es_ad").value     = f.es_ad || "";
   if (document.getElementById("es_yas"))    document.getElementById("es_yas").value    = f.es_yas || "";
   if (document.getElementById("es_meslek")) document.getElementById("es_meslek").value = f.es_meslek || "";
@@ -1041,7 +1060,7 @@ async function yukle() {
 function renderListe() {
   const ara = (document.getElementById("arama")?.value || "").toLowerCase();
   const filtered = ara
-    ? cache.filter(k => (k.ad_soyad+k.talep+k.notlar+k.gelir).toLowerCase().includes(ara))
+    ? cache.filter(k => (k.ad_soyad+k.talep+(k.uzman_gozlemi||"")).toLowerCase().includes(ara))
     : cache;
   const el = document.getElementById("liste-konteyner");
   if (filtered.length === 0) {
@@ -1057,7 +1076,7 @@ function renderListe() {
           ${k.talep ? `<span>📌 ${escHtml(k.talep)}</span>` : ""}
           ${k.dosya_link ? `<a href="${escHtml(k.dosya_link)}" target="_blank" style="color:var(--gold)">📎 Belge</a>` : ""}
         </div>
-        ${k.notlar ? `<div style="font-size:12px;color:var(--muted);margin-top:4px;">${escHtml(k.notlar.slice(0,80))}${k.notlar.length>80?"…":""}</div>` : ""}
+        ${k.uzman_gozlemi ? `<div style="font-size:12px;color:var(--muted);margin-top:4px;">${escHtml((k.uzman_gozlemi||"").slice(0,80))}${(k.uzman_gozlemi||"").length>80?"…":""}</div>` : ""}
       </div>
       <div class="kayit-kart-alt">
         <label class="seç-chk"><input type="checkbox" ${secilenler.has(k.id)?"checked":""} onchange="toggleSecim('${k.id}')"/> Seç</label>
@@ -1102,10 +1121,8 @@ function oykuYaz(f) {
   const ad = f.ad_soyad || "Başvurucu";
   const parcalar = [];
 
-  // 1. Başvurucu + yaş
-  let c1 = ad;
-  if (f.yas) c1 += " " + f.yas + " yaşında olduğunu";
-  else c1 += " görüşmemizde";
+  // 1. Başvurucu
+  let c1 = ad + " görüşmemizde";
 
   // 2. Eş bilgisi
   if (f.es_ad && f.es_yas) {
@@ -1154,17 +1171,7 @@ function oykuYaz(f) {
     c1 += ", " + f.fatura_borc + " fatura borçları olduğunu";
   }
 
-  // 6. Gelir ek bilgi
-  if (f.gelir && f.gelir.trim()) {
-    c1 += ", " + f.gelir.trim();
-  }
-
-  // 7. Sağlık
-  if (f.saglik && f.saglik.trim()) {
-    c1 += ". Sağlık durumuna ilişkin " + f.saglik.trim() + " olduğunu belirtmiştir";
-  }
-
-  // 8. Kapanış
+  // 6. Kapanış
   const talep = (f.talep || "yardım").toLowerCase();
   c1 += " ve bu nedenle belediyemizden " + talep + " istediklerini dile getirmiştir.";
 
@@ -1267,7 +1274,7 @@ async function wordIndir(data) {
     kimlikSatiri("Kurumdan Talebi",       f.talep || "-"),
     kimlikSatiri("Adres",                 f.adres || "-",  "\t\t\t\t"),
     kimlikSatiri("Tel No",                f.telefon || "-", "\t\t\t\t"),
-    kimlikSatiri("Raporu Düzenleyen",     "Ozan Ersin DOĞAN – Sosyal Hizmet Uzmanı", "\t\t"),
+    kimlikSatiri("Raporu Düzenleyen",     (aktifKullanici || "Sosyal Hizmet Uzmanı") + " – Sosyal Hizmet Uzmanı", "\t\t"),
     kimlikSatiri("Başvuru Tarihi",          f.basvuru_tarihi ? trTarih(f.basvuru_tarihi) : "-", "\t\t"),
     kimlikSatiri("Sosyal İnceleme Tarihi", bugunTarih, "\t"),
     bos(),
@@ -1293,7 +1300,7 @@ async function wordIndir(data) {
     degSatiri("-Araç ve Tapu Kayıt Bilgileri:", degerlendirmeYaz(f).arac),
     degSatiri("-Kuşadası Kaymakamlığı SYDV\'den Alınan Bilgileri:", degerlendirmeYaz(f).sydv),
     degSatiri("-Belediyemizden Almış Olduğu Yardımlar:", degerlendirmeYaz(f).bel),
-    ...(f.notlar ? [degSatiri("-Uzman Değerlendirmesi:", f.notlar)] : []),
+    ...(f.uzman_gozlemi ? [degSatiri("-Uzman Gözlemi:", f.uzman_gozlemi)] : []),
     ...(f.dosya_link ? [degSatiri("-Belge/Fotoğraf:", f.dosya_link)] : []),
     bos(),
 
@@ -1303,7 +1310,7 @@ async function wordIndir(data) {
     bos(), bos(),
 
     // İMZA
-    _p([_r("Ozan Ersin DOĞAN")],        { alignment: docx.AlignmentType.RIGHT }),
+    _p([_r(aktifKullanici || "Sosyal Hizmet Uzmanı")], { alignment: docx.AlignmentType.RIGHT }),
     _p([_r("Sosyal Hizmet Uzmanı")],    { alignment: docx.AlignmentType.RIGHT }),
     _p([_r(bugunTarih)],                { alignment: docx.AlignmentType.RIGHT }),
   ];
@@ -1353,18 +1360,146 @@ function secilenWordIndir() {
   });
 }
 
+// ── ÇIKIŞ ──
+function cikisYap() {
+  try { localStorage.removeItem("sir_kullanici"); } catch(e) {}
+  aktifKullanici = "";
+  document.getElementById("pin-ekran").style.display = "flex";
+  document.getElementById("app").style.display = "none";
+}
+
+
+// ── AI RAPOR OLUŞTUR ──
+let aiRaporMetni = "";
+
+async function aiRaporOlustur() {
+  const f = getForm();
+  const btn = document.getElementById("ai-rapor-btn");
+  const durumEl = document.getElementById("ai-rapor-durum");
+  const uygulaRow = document.getElementById("ai-rapor-uygula-row");
+
+  // Fotoğraf kontrolü
+  const fotoInput = document.getElementById("foto-input");
+  const fotoFile = fotoInput?.files?.[0];
+  const mevcutGozlem = document.getElementById("uzman_gozlemi")?.value?.trim();
+
+  btn.disabled = true;
+  btn.textContent = "⏳ Oluşturuluyor…";
+  durumEl.style.display = "block";
+  durumEl.textContent = "Yapay zeka analiz yapıyor, lütfen bekleyin…";
+  uygulaRow.style.display = "none";
+
+  try {
+    // Hasta bilgilerinden bağlam oluştur
+    const baglamMetni = [
+      f.ad_soyad ? "Kişi: " + f.ad_soyad : "",
+      f.medeni ? "Medeni: " + f.medeni : "",
+      f.cinsiyet ? "Cinsiyet: " + f.cinsiyet : "",
+      f.meslek ? "Meslek: " + f.meslek : "",
+      f.adres ? "Adres: " + f.adres : "",
+      f.talep ? "Talep: " + f.talep : "",
+      f.konut_durum ? "Konut: " + f.konut_durum + (f.kira_miktar ? " (" + f.kira_miktar + " TL)" : "") : "",
+      f.es_ad ? "Eş: " + f.es_ad + (f.es_meslek ? " / " + f.es_meslek : "") : "",
+      f.cocuk_detay ? "Çocuklar: " + f.cocuk_detay : (f.cocuk ? f.cocuk + " çocuk" : ""),
+      f.fatura_durum === "var" ? "Fatura borcu: " + (f.fatura_borc || "var") : "",
+      mevcutGozlem ? "Mevcut uzman notu: " + mevcutGozlem : "",
+    ].filter(Boolean).join("\n");
+
+    const promptMetni = `Sen Kuşadası Belediyesi Sosyal Hizmetler Müdürlüğü'nde görev yapan bir sosyal hizmet uzmanısın. Aşağıdaki vatandaş bilgilerine ve ${fotoFile ? "yüklenen fotoğraf/belgeye" : "mevcut verilere"} dayanarak, bir Sosyal İnceleme Raporu (SİR) için SOSYAL HİZMET UZMANI GÖZLEMİ bölümünü yaz.
+
+Vatandaş Bilgileri:
+${baglamMetni}
+
+Görev:
+- Vatandaşın genel yaşam koşullarını, sosyoekonomik durumunu, sağlık/engel bilgilerini ve ihtiyaçlarını profesyonel bir dille özetle.
+- Resmi rapor dili kullan (3. şahıs, geçmiş zaman bildirme kipi).
+- 150-250 kelime arasında, akıcı paragraf formatında yaz.
+- "gözlemlenmiştir", "belirtmiştir", "tespit edilmiştir" gibi resmi ifadeler kullan.
+${fotoFile ? "- Fotoğraftaki/belgedeki görsel bilgileri de değerlendirmeye katarak gözlemini zenginleştir." : ""}
+- Sadece gözlem metnini yaz, başlık veya açıklama ekleme.`;
+
+    // Mesajları oluştur
+    const messages = [];
+    
+    if (fotoFile && fotoFile.type.startsWith("image/")) {
+      // Fotoğrafı base64'e çevir
+      const b64 = await new Promise((res, rej) => {
+        const r = new FileReader();
+        r.onload = () => res(r.result.split(",")[1]);
+        r.onerror = rej;
+        r.readAsDataURL(fotoFile);
+      });
+      
+      messages.push({
+        role: "user",
+        content: [
+          { type: "image", source: { type: "base64", media_type: fotoFile.type, data: b64 } },
+          { type: "text", text: promptMetni }
+        ]
+      });
+    } else {
+      messages.push({ role: "user", content: promptMetni });
+    }
+
+    const resp = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 1000,
+        messages
+      })
+    });
+
+    const data = await resp.json();
+    if (data.error) throw new Error(data.error.message);
+    
+    aiRaporMetni = data.content?.find(b => b.type === "text")?.text || "";
+    if (!aiRaporMetni) throw new Error("Yanıt alınamadı");
+
+    durumEl.textContent = aiRaporMetni;
+    uygulaRow.style.display = "block";
+
+  } catch(err) {
+    durumEl.textContent = "⚠️ Hata: " + err.message;
+    aiRaporMetni = "";
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "🤖 AI ile Rapor Notu Oluştur";
+  }
+}
+
+function aiRaporUygula() {
+  if (!aiRaporMetni) return;
+  const el = document.getElementById("uzman_gozlemi");
+  if (el) {
+    el.value = aiRaporMetni;
+    mesaj("✅ Uzman gözlemine uygulandı!");
+    document.getElementById("ai-rapor-uygula-row").style.display = "none";
+  }
+}
+
 // ── APP BAŞLAT ──
 function appBaslat() {
+  // Kullanıcı badge güncelle
+  const badge = document.getElementById("kullanici-badge");
+  if (badge && aktifKullanici) badge.textContent = aktifKullanici.split(" ")[0];
   document.getElementById("tarih").value = bugun();
   yukle().then(() => {
     if (document.getElementById("page-liste").classList.contains("active")) renderListe();
   });
 }
 
-// Pin kontrol veya başlat
-if (document.getElementById("app").style.display !== "none") {
-  appBaslat();
-}
+// Uygulama başlat
+try {
+  const kaydedilen = localStorage.getItem("sir_kullanici");
+  if (kaydedilen) {
+    aktifKullanici = kaydedilen;
+    document.getElementById("pin-ekran").style.display = "none";
+    document.getElementById("app").style.display = "block";
+    appBaslat();
+  }
+} catch(e) {}
 </script>
 </body>
 </html>

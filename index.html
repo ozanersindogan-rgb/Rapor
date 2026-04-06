@@ -542,11 +542,11 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; b
         <!-- AI RAPOR OLUŞTUR -->
         <div style="margin-top:4px;">
           <button class="btn btn-gold btn-block" onclick="aiRaporOlustur()" id="ai-rapor-btn">
-            🤖 Fotoğraftan Formu Doldur / Rapor Yaz
+            🤖 Fotoğraftan Kişi Bilgilerini Doldur
           </button>
           <div style="margin-top:6px;font-size:11px;color:var(--muted);text-align:center;">
-            📸 Fotoğraf yüklersen → tüm formu otomatik doldurur<br>
-            📝 Fotoğraf yoksa → mevcut bilgilerden gözlem yazar
+            📸 Fotoğraf yüklersen → sadece Kişi Bilgisi alanlarını doldurur<br>
+            ✍️ Görüşme / başvuru bilgilerini siz manuel doldurursunuz
           </div>
           <div id="ai-rapor-durum" style="display:none;margin-top:10px;padding:12px;background:#f8f9fc;border-radius:10px;border:1.5px solid var(--border);font-size:13px;color:var(--text);line-height:1.6;white-space:pre-wrap;"></div>
           <div style="margin-top:8px;display:none;" id="ai-rapor-uygula-row">
@@ -899,24 +899,6 @@ function setForm(f) {
   });
   if (document.getElementById("cocuk")) document.getElementById("cocuk").value = f.cocuk || "";
   if (document.getElementById("meslek")) document.getElementById("meslek").value = f.meslek || "";
-  // Talep checkboxları
-  const talep = (f.talep || "").split(",").map(t => t.trim());
-  document.getElementById("t_nakdi").checked   = talep.includes("Nakdi Yardım");
-  document.getElementById("t_erzak").checked   = talep.includes("Erzak");
-  document.getElementById("t_yasli").checked   = talep.includes("Yaşlı Bakım");
-  document.getElementById("t_evbakim").checked = talep.includes("Evde Bakım");
-  document.getElementById("t_diger").checked   = talep.includes("Diğer");
-  talepDegisti();
-  // Araç / Tapu
-  aracDurum = f.arac || "";
-  tapuDurum = f.tapu || "";
-  document.getElementById("arac-radio").querySelectorAll(".rad-btn").forEach(b => b.classList.remove("secili"));
-  document.getElementById("tapu-radio").querySelectorAll(".rad-btn").forEach(b => b.classList.remove("secili"));
-  if (f.arac) {
-    const idx = f.arac === "var" ? 1 : 0;
-    document.getElementById("arac-radio").querySelectorAll(".rad-btn")[idx]?.classList.add("secili");
-    if (f.arac === "var") document.getElementById("arac-aciklama").classList.add("acik");
-  }
   if (f.tapu) {
     const idx = f.tapu === "var" ? 1 : 0;
     document.getElementById("tapu-radio").querySelectorAll(".rad-btn")[idx]?.classList.add("secili");
@@ -1421,9 +1403,10 @@ async function aiRaporOlustur() {
       const fotoPrompt = `Bu fotoğraf/belge, bir belediye sosyal yardım başvurusuna ait bir belgedir.
 
 Görevin şu:
-1. Fotoğraftaki/belgdeki tüm kişi ve başvuru bilgilerini oku.
-2. Aşağıdaki JSON formatında döndür (bilgi yoksa ilgili alanı boş bırak).
-3. Sadece JSON döndür, başka hiçbir şey yazma.
+1. Fotoğraftaki sadece KİŞİ BİLGİSİ alanlarını oku.
+2. Görüşme Bilgileri, Başvuru Tarihi, Başvuru No, talep işaretleri ve uzman gözlemi gibi alanları doldurma.
+3. Bilgi net değilse boş bırak.
+4. Sadece JSON döndür, başka hiçbir şey yazma.
 
 JSON formatı:
 {
@@ -1438,13 +1421,7 @@ JSON formatı:
   "cocuk": "",
   "es_ad": "",
   "es_meslek": "",
-  "cocuk_detay": "",
-  "basvuru_no": "",
-  "basvuru_tarihi": "YYYY-MM-DD formatında",
-  "talep": "Nakdi Yardım/Erzak/Yaşlı Bakım/Evde Bakım/Diğer (virgülle ayır)",
-  "konut_durum": "kira/kendisi/akraba",
-  "kira_miktar": "",
-  "uzman_gozlemi": "Belgeden çıkan bilgilere göre resmi SİR diliyle 150-250 kelime uzman gözlemi. 3. şahıs, geçmiş zaman bildirme kipi kullan. gözlemlenmiştir, belirtmiştir, tespit edilmiştir gibi resmi ifadeler kullan."
+  "cocuk_detay": ""
 }`;
 
       messages.push({
@@ -1535,10 +1512,6 @@ ${baglamMetni}`
       set("es_ad",         parsed.es_ad);
       set("es_meslek",     parsed.es_meslek);
       set("cocuk_detay",   parsed.cocuk_detay);
-      set("basvuru_no",    parsed.basvuru_no);
-      set("basvuru_tarihi",parsed.basvuru_tarihi);
-      set("uzman_gozlemi", parsed.uzman_gozlemi);
-      aiRaporMetni = parsed.uzman_gozlemi || "";
 
       if (parsed.medeni) {
         const med = document.getElementById("medeni");
@@ -1548,21 +1521,6 @@ ${baglamMetni}`
         const cins = document.getElementById("cinsiyet");
         if (cins) cins.value = parsed.cinsiyet;
       }
-      if (parsed.konut_durum) {
-        toggleVar("konut", parsed.konut_durum);
-        if (parsed.kira_miktar) set("kira_miktar", parsed.kira_miktar);
-      }
-
-      // Talep checkboxları
-      if (parsed.talep) {
-        const talpler = parsed.talep.split(",").map(t => t.trim());
-        document.getElementById("t_nakdi").checked   = talpler.some(t => t.includes("Nakdi"));
-        document.getElementById("t_erzak").checked   = talpler.some(t => t.includes("Erzak"));
-        document.getElementById("t_yasli").checked   = talpler.some(t => t.includes("Yaşlı"));
-        document.getElementById("t_evbakim").checked = talpler.some(t => t.includes("Evde"));
-        document.getElementById("t_diger").checked   = talpler.some(t => t.includes("Diğer"));
-        talepDegisti();
-      }
 
       // Başarı mesajı
       durumEl.style.background = "#ecfdf5";
@@ -1571,15 +1529,18 @@ ${baglamMetni}`
       const doldurulan = [
         parsed.ad_soyad && "Ad Soyad",
         parsed.tc && "T.C.",
-        parsed.dogum && "Doğum",
+        parsed.dogum && "Doğum Tarihi",
+        parsed.telefon && "Telefon",
         parsed.medeni && "Medeni Durum",
-        parsed.adres && "Adres",
-        parsed.uzman_gozlemi && "Uzman Gözlemi",
+        parsed.cinsiyet && "Cinsiyet",
+        parsed.meslek && "Meslek",
+        parsed.cocuk && "Çocuk Sayısı",
+        parsed.adres && "Adres"
       ].filter(Boolean);
-      durumEl.textContent = "✅ Form otomatik dolduruldu!\nDoldurulan alanlar: " + doldurulan.join(", ") +
-        "\n\nEksik alanları manuel tamamlayıp kaydedin.";
+      durumEl.textContent = "✅ Kişi Bilgisi alanları dolduruldu!\nDoldurulan alanlar: " + (doldurulan.join(", ") || "Alan bulunamadı") +
+        "\n\nGörüşme Tarihi, Başvuru Tarihi, Başvuru No ve diğer alanları siz manuel dolduracaksınız.";
       uygulaRow.style.display = "none";
-      mesaj("✅ Fotoğraftan form dolduruldu!");
+      mesaj("✅ Kişi bilgileri fotoğraftan dolduruldu!");
 
     } else {
       // Sadece gözlem metni
@@ -1599,7 +1560,7 @@ ${baglamMetni}`
     aiRaporMetni = "";
   } finally {
     btn.disabled = false;
-    btn.textContent = "🤖 Fotoğraftan Formu Doldur / Rapor Yaz";
+    btn.textContent = "🤖 Fotoğraftan Kişi Bilgilerini Doldur";
   }
 }
 

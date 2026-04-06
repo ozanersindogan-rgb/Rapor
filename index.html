@@ -587,6 +587,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; b
 <div class="mesaj-bar" id="mesaj-bar"></div>
 
 <script>
+
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyB9tYLbLRiY9HEfJQLQcyI5aij6wY2Qw_E",
   authDomain: "rapor-1192a.firebaseapp.com",
@@ -678,11 +679,7 @@ function yerelRaporMetniOlustur(f) {
   if (f.uzman_gozlemi && f.uzman_gozlemi.trim()) bolumler.push(f.uzman_gozlemi.trim());
   const talep = f.talep ? "Vatandaşın talebi " + f.talep + " olarak değerlendirilmiştir." : "";
   if (talep) bolumler.push(talep);
-  return bolumler.filter(Boolean).join("
-
-").trim() || "Uzman gözlemi oluşturulamadı.";
-}
-
+  return bolumler.filter(Boolean).join("\n\n").trim() || "Uzman gözlemi oluşturulamadı.";
 // ── PIN ──
 let _pin = "";
 let aktifKullanici = "";
@@ -1513,11 +1510,14 @@ async function aiRaporOlustur() {
   const btn = document.getElementById("ai-rapor-btn");
   const durumEl = document.getElementById("ai-rapor-durum");
   const uygulaRow = document.getElementById("ai-rapor-uygula-row");
-
   const fotoInput = document.getElementById("foto-input");
   const fotoFile = fotoInput?.files?.[0];
 
-  const g = (id) => { const el = document.getElementById(id); return el ? el.value.trim() : ""; };
+  const g = (id) => {
+    const el = document.getElementById(id);
+    return el ? el.value.trim() : "";
+  };
+
   const mevcutGozlem = g("uzman_gozlemi");
   const f = {
     ad_soyad: g("ad_soyad"), tc: g("tc"), dogum: g("dogum"),
@@ -1535,109 +1535,32 @@ async function aiRaporOlustur() {
     arac_not: g("arac_not"),
     tapu_not: g("tapu_not"),
   };
+
   try {
     const talep = [];
-    if (document.getElementById("t_nakdi")?.checked)   talep.push("Nakdi Yardım");
-    if (document.getElementById("t_erzak")?.checked)   talep.push("Erzak");
-    if (document.getElementById("t_yasli")?.checked)   talep.push("Yaşlı Bakım");
+    if (document.getElementById("t_nakdi")?.checked) talep.push("Nakdi Yardım");
+    if (document.getElementById("t_erzak")?.checked) talep.push("Erzak");
+    if (document.getElementById("t_yasli")?.checked) talep.push("Yaşlı Bakım");
     if (document.getElementById("t_evbakim")?.checked) talep.push("Evde Bakım");
-    if (document.getElementById("t_diger")?.checked)   talep.push("Diğer");
+    if (document.getElementById("t_diger")?.checked) talep.push("Diğer");
     f.talep = talep.join(", ");
-  } catch(e) {}
+  } catch (e) {}
 
   btn.disabled = true;
   btn.textContent = "⏳ Rapor hazırlanıyor…";
   durumEl.style.display = "block";
-  durumEl.style.background = "#f0f4ff";
-  durumEl.style.border = "1.5px solid #c7d2fe";
-  durumEl.style.color = "#3730a3";
-  durumEl.textContent = fotoFile
-    ? "📸 Fotoğraf algılandı. Önce çevrim içi analiz denenecek…"
-    : "🤖 Mevcut bilgilerden rapor hazırlanıyor…";
   uygulaRow.style.display = "none";
 
   try {
-    const messages = [];
-
-    if (fotoFile && fotoFile.type.startsWith("image/")) {
-      const b64 = await new Promise((res, rej) => {
-        const r = new FileReader();
-        r.onload = () => res(r.result.split(",")[1]);
-        r.onerror = rej;
-        r.readAsDataURL(fotoFile);
-      });
-      const fotoPrompt = `Bu fotoğraf/belge, bir belediye sosyal yardım başvurusuna ait bir belgedir.
-Sadece JSON döndür. Bilgi yoksa boş bırak.`;
-      messages.push({
-        role: "user",
-        content: [
-          { type: "image", source: { type: "base64", media_type: fotoFile.type, data: b64 } },
-          { type: "text", text: fotoPrompt }
-        ]
-      });
-    } else {
-      const baglamMetni = [
-        f.ad_soyad ? "Kişi: " + f.ad_soyad : "",
-        f.medeni   ? "Medeni: " + f.medeni : "",
-        f.cinsiyet ? "Cinsiyet: " + f.cinsiyet : "",
-        f.meslek   ? "Meslek: " + f.meslek : "",
-        f.adres    ? "Adres: " + f.adres : "",
-        f.talep    ? "Talep: " + f.talep : "",
-        f.konut_durum ? "Konut: " + f.konut_durum + (f.kira_miktar ? " (" + f.kira_miktar + " TL)" : "") : "",
-        f.es_ad    ? "Eş: " + f.es_ad + (f.es_meslek ? " / " + f.es_meslek : "") : "",
-        f.cocuk_detay ? "Çocuklar: " + f.cocuk_detay : (f.cocuk ? f.cocuk + " çocuk" : ""),
-        f.fatura_durum === "var" ? "Fatura borcu: " + (f.fatura_borc || "var") : "",
-        mevcutGozlem ? "Mevcut uzman notu: " + mevcutGozlem : "",
-      ].filter(Boolean).join("
-");
-      messages.push({
-        role: "user",
-        content: `Sen Kuşadası Belediyesi Sosyal Hizmetler Müdürlüğü uzmanısın. Aşağıdaki bilgilere dayanarak SİR için resmi uzman gözlemi yaz. Sadece gözlem metnini yaz.
-
-${baglamMetni}`
-      });
-    }
-
-    try {
-      const resp = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1500,
-          messages
-        })
-      });
-      const data = await resp.json();
-      if (data.error) throw new Error(data.error.message || "AI servisi hata verdi");
-      const rawText = data.content?.find(b => b.type === "text")?.text || "";
-      if (!rawText) throw new Error("Yanıt alınamadı");
-      if (!fotoFile) {
-        aiRaporMetni = rawText.trim();
-        durumEl.style.background = "#ecfdf5";
-        durumEl.style.border = "1.5px solid #6ee7b7";
-        durumEl.style.color = "#065f46";
-        durumEl.textContent = aiRaporMetni;
-        uygulaRow.style.display = "block";
-        return;
-      }
-    } catch (remoteErr) {
-      console.warn("Çevrim içi AI kullanılamadı, yerel fallback devrede:", remoteErr);
-    }
-
     aiRaporMetni = yerelRaporMetniOlustur(f);
     durumEl.style.background = "#fff7e6";
     durumEl.style.border = "1.5px solid #f3d08a";
     durumEl.style.color = "#8a5b00";
     durumEl.textContent = fotoFile
-      ? "⚠️ Tarayıcıdan doğrudan AI servisine erişim engellendiği için fotoğraftan otomatik okuma yapılamadı. Mevcut form verilerinden yerel rapor oluşturuldu:
-
-" + aiRaporMetni
-      : "⚠️ AI servisine erişilemedi. Mevcut form verilerinden yerel rapor oluşturuldu:
-
-" + aiRaporMetni;
+      ? "⚠️ Fotoğraf yüklü olsa da tarayıcıdan doğrudan AI servisine erişim engellendiği için fotoğraftan otomatik okuma yapılamadı. Mevcut form verilerinden yerel rapor oluşturuldu:\n\n" + aiRaporMetni
+      : "ℹ️ Mevcut form verilerinden yerel rapor oluşturuldu:\n\n" + aiRaporMetni;
     uygulaRow.style.display = "block";
-  } catch(err) {
+  } catch (err) {
     durumEl.style.background = "#fef2f2";
     durumEl.style.border = "1.5px solid #fca5a5";
     durumEl.style.color = "#991b1b";
@@ -1706,7 +1629,8 @@ window.wordIndir = wordIndir;
 window.wordIndirById = wordIndirById;
 window.secilenWordIndir = secilenWordIndir;
 window.aiRaporOlustur = aiRaporOlustur;
-window.aiRaporUygula = aiRaporUygula;
+window.aiRaporUygula = aiRaporUygula;}
+
 </script>
 </body>
 </html>

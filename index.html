@@ -245,12 +245,12 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; b
     <div style="padding:20px 16px 24px;">
       <p style="color:rgba(255,255,255,.6);font-size:12px;letter-spacing:1px;text-transform:uppercase;text-align:center;margin-bottom:16px;">Kullanıcı Seçin</p>
       <div style="display:flex;flex-direction:column;gap:10px;">
-        <button class="kullanici-btn" onclick="kullanicisecim('Ozan Ersin DOĞAN')">
+        <button type="button" class="kullanici-btn" data-isim="Ozan Ersin DOĞAN" onclick="kullanicisecim('Ozan Ersin DOĞAN', event)">
           <span class="kb-avatar">OE</span>
           <span class="kb-isim">Ozan Ersin DOĞAN</span>
           <span class="kb-unvan">Sosyal Hizmet Uzmanı</span>
         </button>
-        <button class="kullanici-btn" onclick="kullanicisecim('Aybüke')">
+        <button type="button" class="kullanici-btn" data-isim="Aybüke" onclick="kullanicisecim('Aybüke', event)">
           <span class="kb-avatar">AY</span>
           <span class="kb-isim">Aybüke</span>
           <span class="kb-unvan">Sosyal Hizmet Uzmanı</span>
@@ -709,19 +709,36 @@ function _pinKontrol() {
     setTimeout(() => { _pinGuncelle(); document.getElementById("pin-hata").textContent = ""; }, 800);
   }
 }
-function kullanicisecim(isim) {
+function kullanicisecim(isim, ev) {
+  if (ev && ev.preventDefault) ev.preventDefault();
+  if (ev && ev.stopPropagation) ev.stopPropagation();
+
   aktifKullanici = isim;
+
   try { localStorage.setItem("sir_kullanici", isim); } catch(e) {}
-  document.getElementById("pin-ekran").style.display = "none";
-  document.getElementById("app").style.display = "block";
-  // Nav'da kullanıcı adını göster
+  try { sessionStorage.setItem("sir_kullanici", isim); } catch(e) {}
+
+  const kaydedilenLS = (() => { try { return localStorage.getItem("sir_kullanici"); } catch(e) { return ""; } })();
+  const kaydedilenSS = (() => { try { return sessionStorage.getItem("sir_kullanici"); } catch(e) { return ""; } })();
+  if (!kaydedilenLS && !kaydedilenSS) {
+    mesaj("Kullanıcı bilgisi tarayıcıda tutulamadı", false);
+    return false;
+  }
+
+  const pinEkran = document.getElementById("pin-ekran");
+  const app = document.getElementById("app");
+  if (pinEkran) pinEkran.style.display = "none";
+  if (app) app.style.display = "block";
+
   const badge = document.getElementById("kullanici-badge");
   if (badge) badge.textContent = isim.split(" ")[0];
+
   appBaslat();
+  return false;
 }
 // Daha önce seçilmiş mi?
 try {
-  const kaydedilen = localStorage.getItem("sir_kullanici");
+  const kaydedilen = localStorage.getItem("sir_kullanici") || sessionStorage.getItem("sir_kullanici");
   if (kaydedilen) {
     aktifKullanici = kaydedilen;
     document.getElementById("pin-ekran").style.display = "none";
@@ -1488,8 +1505,12 @@ function secilenWordIndir() {
 // ── GİRİŞ BUTONU LISTENER'LARI ──
 document.addEventListener("DOMContentLoaded", function() {
   document.querySelectorAll(".kullanici-btn").forEach(function(btn) {
-    btn.addEventListener("click", function() {
-      kullanicisecim(this.getAttribute("data-isim"));
+    btn.setAttribute("type", "button");
+    btn.addEventListener("click", function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      kullanicisecim(this.getAttribute("data-isim") || this.innerText.trim(), e);
+      return false;
     });
   });
 });
@@ -1497,6 +1518,7 @@ document.addEventListener("DOMContentLoaded", function() {
 // ── ÇIKIŞ ──
 function cikisYap() {
   try { localStorage.removeItem("sir_kullanici"); } catch(e) {}
+  try { sessionStorage.removeItem("sir_kullanici"); } catch(e) {}
   aktifKullanici = "";
   document.getElementById("pin-ekran").style.display = "flex";
   document.getElementById("app").style.display = "none";
@@ -1597,7 +1619,7 @@ function appBaslat() {
 
 // Uygulama başlat
 try {
-  const kaydedilen = localStorage.getItem("sir_kullanici");
+  const kaydedilen = localStorage.getItem("sir_kullanici") || sessionStorage.getItem("sir_kullanici");
   if (kaydedilen) {
     aktifKullanici = kaydedilen;
     document.getElementById("pin-ekran").style.display = "none";
@@ -1631,20 +1653,6 @@ window.secilenWordIndir = secilenWordIndir;
 window.aiRaporOlustur = aiRaporOlustur;
 window.aiRaporUygula = aiRaporUygula;}
 
-</script>
-<script>
-function kullanicisecim(kullanici) {
-  console.log("Seçilen kullanıcı:", kullanici);
-
-  localStorage.setItem("sir_kullanici", kullanici);
-
-  // giriş ekranını kapat
-  const pin = document.getElementById("pin-ekran");
-  if (pin) pin.style.display = "none";
-
-  // sayfayı yenile (temiz state)
-  location.reload();
-}
 </script>
 </body>
 </html>

@@ -554,8 +554,12 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; b
         <!-- AI RAPOR OLUŞTUR -->
         <div style="margin-top:4px;">
           <button class="btn btn-gold btn-block" onclick="aiRaporOlustur()" id="ai-rapor-btn">
-            🤖 AI ile Rapor Notu Oluştur
+            🤖 Fotoğraftan Formu Doldur / Rapor Yaz
           </button>
+          <div style="margin-top:6px;font-size:11px;color:var(--muted);text-align:center;">
+            📸 Fotoğraf yüklersen → tüm formu otomatik doldurur<br>
+            📝 Fotoğraf yoksa → mevcut bilgilerden gözlem yazar
+          </div>
           <div id="ai-rapor-durum" style="display:none;margin-top:10px;padding:12px;background:#f8f9fc;border-radius:10px;border:1.5px solid var(--border);font-size:13px;color:var(--text);line-height:1.6;white-space:pre-wrap;"></div>
           <div style="margin-top:8px;display:none;" id="ai-rapor-uygula-row">
             <button class="btn btn-green btn-block" onclick="aiRaporUygula()">✅ Bu Metni Uzman Gözlemine Uygula</button>
@@ -826,33 +830,32 @@ async function fotoSec() {
 // ── FORM GET/SET ──
 function getForm() {
   const talep = [];
-  if (document.getElementById("t_nakdi").checked)   talep.push("Nakdi Yardım");
-  if (document.getElementById("t_erzak").checked)   talep.push("Erzak");
-  if (document.getElementById("t_yasli").checked)   talep.push("Yaşlı Bakım");
-  if (document.getElementById("t_evbakim").checked) talep.push("Evde Bakım");
-  if (document.getElementById("t_diger").checked)   talep.push("Diğer");
+  if (document.getElementById("t_nakdi")?.checked)   talep.push("Nakdi Yardım");
+  if (document.getElementById("t_erzak")?.checked)   talep.push("Erzak");
+  if (document.getElementById("t_yasli")?.checked)   talep.push("Yaşlı Bakım");
+  if (document.getElementById("t_evbakim")?.checked) talep.push("Evde Bakım");
+  if (document.getElementById("t_diger")?.checked)   talep.push("Diğer");
   return {
-    ad_soyad:    document.getElementById("ad_soyad").value.trim(),
-    tc:          document.getElementById("tc").value.trim(),
-    dogum:       document.getElementById("dogum").value,
-    telefon:     document.getElementById("telefon").value.trim(),
-    medeni:      document.getElementById("medeni").value,
-    adres:       document.getElementById("adres").value.trim(),
-    tarih:       document.getElementById("tarih").value,
-    basvuru_no:  document.getElementById("basvuru_no").value.trim(),
+    ad_soyad:    document.getElementById("ad_soyad")?.value?.trim() || "",
+    tc:          document.getElementById("tc")?.value?.trim() || "",
+    dogum:       document.getElementById("dogum")?.value,
+    telefon:     document.getElementById("telefon")?.value?.trim() || "",
+    medeni:      document.getElementById("medeni")?.value,
+    adres:       document.getElementById("adres")?.value?.trim() || "",
+    tarih:       document.getElementById("tarih")?.value,
+    basvuru_no:  document.getElementById("basvuru_no")?.value?.trim() || "",
     talep:       talep.join(", "),
-    diger_talep: document.getElementById("diger_talep").value.trim(),
-    uzman_gozlemi: document.getElementById("uzman_gozlemi")?.value.trim() || "",
+    diger_talep: document.getElementById("diger_talep")?.value?.trim() || "",
+    uzman_gozlemi: document.getElementById("uzman_gozlemi")?.value?.trim() || "",
     arac:        aracDurum,
-    arac_not:    document.getElementById("arac_not").value.trim(),
+    arac_not:    document.getElementById("arac_not")?.value?.trim() || "",
     tapu:        tapuDurum,
-    tapu_not:    document.getElementById("tapu_not").value.trim(),
+    tapu_not:    document.getElementById("tapu_not")?.value?.trim() || "",
     sydv_durum:  sydvDurum,
-    sydv:        document.getElementById("sydv").value.trim(),
+    sydv:        document.getElementById("sydv")?.value?.trim() || "",
     bel_durum:   belDurum,
-    belediye:    document.getElementById("belediye").value.trim(),
-    notlar:      document.getElementById("notlar").value.trim(),
-    dosya_link:     fotoImgbbLink || document.getElementById("dosya_link").value.trim(),
+    belediye:    document.getElementById("belediye")?.value?.trim() || "",
+    dosya_link:     fotoImgbbLink || document.getElementById("dosya_link")?.value?.trim() || "",
     basvuru_tarihi: document.getElementById("basvuru_tarihi")?.value || "",
 
     es_ad:          document.getElementById("es_ad")?.value.trim() || "",
@@ -1373,72 +1376,122 @@ function cikisYap() {
 let aiRaporMetni = "";
 
 async function aiRaporOlustur() {
-  const f = getForm();
   const btn = document.getElementById("ai-rapor-btn");
   const durumEl = document.getElementById("ai-rapor-durum");
   const uygulaRow = document.getElementById("ai-rapor-uygula-row");
 
-  // Fotoğraf kontrolü
   const fotoInput = document.getElementById("foto-input");
   const fotoFile = fotoInput?.files?.[0];
-  const mevcutGozlem = document.getElementById("uzman_gozlemi")?.value?.trim();
+
+  // Güvenli alan okuyucu (null kontrolü ile)
+  const g = (id) => { const el = document.getElementById(id); return el ? el.value.trim() : ""; };
+  const mevcutGozlem = g("uzman_gozlemi");
+
+  // Mevcut form verilerini güvenli şekilde topla (getForm() yerine)
+  const f = {
+    ad_soyad: g("ad_soyad"), tc: g("tc"), dogum: g("dogum"),
+    telefon: g("telefon"), medeni: g("medeni"), adres: g("adres"),
+    meslek: g("meslek"), cocuk: g("cocuk"), es_ad: g("es_ad"),
+    es_meslek: g("es_meslek"), cocuk_detay: g("cocuk_detay"),
+    basvuru_no: g("basvuru_no"), talep: "",
+    konut_durum: typeof konutDurum !== "undefined" ? konutDurum : "",
+    kira_miktar: g("kira_miktar"),
+    fatura_durum: typeof faturaDurum !== "undefined" ? faturaDurum : "",
+    fatura_borc: g("fatura_borc"),
+  };
+  // Talep checkboxları
+  try {
+    const talep = [];
+    if (document.getElementById("t_nakdi")?.checked)   talep.push("Nakdi Yardım");
+    if (document.getElementById("t_erzak")?.checked)   talep.push("Erzak");
+    if (document.getElementById("t_yasli")?.checked)   talep.push("Yaşlı Bakım");
+    if (document.getElementById("t_evbakim")?.checked) talep.push("Evde Bakım");
+    if (document.getElementById("t_diger")?.checked)   talep.push("Diğer");
+    f.talep = talep.join(", ");
+  } catch(e) {}
 
   btn.disabled = true;
-  btn.textContent = "⏳ Oluşturuluyor…";
+  btn.textContent = "⏳ Analiz ediliyor…";
   durumEl.style.display = "block";
-  durumEl.textContent = "Yapay zeka analiz yapıyor, lütfen bekleyin…";
+  durumEl.style.background = "#f0f4ff";
+  durumEl.style.border = "1.5px solid #c7d2fe";
+  durumEl.style.color = "#3730a3";
+  durumEl.textContent = fotoFile
+    ? "📸 Fotoğraf okunuyor, form dolduruluyor…"
+    : "🤖 Mevcut bilgilerden gözlem yazılıyor…";
   uygulaRow.style.display = "none";
 
   try {
-    // Hasta bilgilerinden bağlam oluştur
-    const baglamMetni = [
-      f.ad_soyad ? "Kişi: " + f.ad_soyad : "",
-      f.medeni ? "Medeni: " + f.medeni : "",
-      f.cinsiyet ? "Cinsiyet: " + f.cinsiyet : "",
-      f.meslek ? "Meslek: " + f.meslek : "",
-      f.adres ? "Adres: " + f.adres : "",
-      f.talep ? "Talep: " + f.talep : "",
-      f.konut_durum ? "Konut: " + f.konut_durum + (f.kira_miktar ? " (" + f.kira_miktar + " TL)" : "") : "",
-      f.es_ad ? "Eş: " + f.es_ad + (f.es_meslek ? " / " + f.es_meslek : "") : "",
-      f.cocuk_detay ? "Çocuklar: " + f.cocuk_detay : (f.cocuk ? f.cocuk + " çocuk" : ""),
-      f.fatura_durum === "var" ? "Fatura borcu: " + (f.fatura_borc || "var") : "",
-      mevcutGozlem ? "Mevcut uzman notu: " + mevcutGozlem : "",
-    ].filter(Boolean).join("\n");
-
-    const promptMetni = `Sen Kuşadası Belediyesi Sosyal Hizmetler Müdürlüğü'nde görev yapan bir sosyal hizmet uzmanısın. Aşağıdaki vatandaş bilgilerine ve ${fotoFile ? "yüklenen fotoğraf/belgeye" : "mevcut verilere"} dayanarak, bir Sosyal İnceleme Raporu (SİR) için SOSYAL HİZMET UZMANI GÖZLEMİ bölümünü yaz.
-
-Vatandaş Bilgileri:
-${baglamMetni}
-
-Görev:
-- Vatandaşın genel yaşam koşullarını, sosyoekonomik durumunu, sağlık/engel bilgilerini ve ihtiyaçlarını profesyonel bir dille özetle.
-- Resmi rapor dili kullan (3. şahıs, geçmiş zaman bildirme kipi).
-- 150-250 kelime arasında, akıcı paragraf formatında yaz.
-- "gözlemlenmiştir", "belirtmiştir", "tespit edilmiştir" gibi resmi ifadeler kullan.
-${fotoFile ? "- Fotoğraftaki/belgedeki görsel bilgileri de değerlendirmeye katarak gözlemini zenginleştir." : ""}
-- Sadece gözlem metnini yaz, başlık veya açıklama ekleme.`;
-
-    // Mesajları oluştur
     const messages = [];
-    
+
     if (fotoFile && fotoFile.type.startsWith("image/")) {
-      // Fotoğrafı base64'e çevir
+      // ── FOTOĞRAFTAN TAM FORM DOLDUR ──
       const b64 = await new Promise((res, rej) => {
         const r = new FileReader();
         r.onload = () => res(r.result.split(",")[1]);
         r.onerror = rej;
         r.readAsDataURL(fotoFile);
       });
-      
+
+      const fotoPrompt = `Bu fotoğraf/belge, bir belediye sosyal yardım başvurusuna ait bir belgedir.
+
+Görevin şu:
+1. Fotoğraftaki/belgdeki tüm kişi ve başvuru bilgilerini oku.
+2. Aşağıdaki JSON formatında döndür (bilgi yoksa ilgili alanı boş bırak).
+3. Sadece JSON döndür, başka hiçbir şey yazma.
+
+JSON formatı:
+{
+  "ad_soyad": "",
+  "tc": "",
+  "dogum": "YYYY-MM-DD formatında",
+  "telefon": "",
+  "medeni": "Bekar/Evli/Boşanmış/Dul",
+  "cinsiyet": "Kadın/Erkek",
+  "adres": "",
+  "meslek": "",
+  "cocuk": "",
+  "es_ad": "",
+  "es_meslek": "",
+  "cocuk_detay": "",
+  "basvuru_no": "",
+  "basvuru_tarihi": "YYYY-MM-DD formatında",
+  "talep": "Nakdi Yardım/Erzak/Yaşlı Bakım/Evde Bakım/Diğer (virgülle ayır)",
+  "konut_durum": "kira/kendisi/akraba",
+  "kira_miktar": "",
+  "uzman_gozlemi": "Belgeden çıkan bilgilere göre resmi SİR diliyle 150-250 kelime uzman gözlemi. 3. şahıs, geçmiş zaman bildirme kipi kullan. gözlemlenmiştir, belirtmiştir, tespit edilmiştir gibi resmi ifadeler kullan."
+}`;
+
       messages.push({
         role: "user",
         content: [
           { type: "image", source: { type: "base64", media_type: fotoFile.type, data: b64 } },
-          { type: "text", text: promptMetni }
+          { type: "text", text: fotoPrompt }
         ]
       });
+
     } else {
-      messages.push({ role: "user", content: promptMetni });
+      // ── MEVCUT VERİDEN SADECE GÖZLEMİ YAZ ──
+      const baglamMetni = [
+        f.ad_soyad ? "Kişi: " + f.ad_soyad : "",
+        f.medeni   ? "Medeni: " + f.medeni : "",
+        f.cinsiyet ? "Cinsiyet: " + f.cinsiyet : "",
+        f.meslek   ? "Meslek: " + f.meslek : "",
+        f.adres    ? "Adres: " + f.adres : "",
+        f.talep    ? "Talep: " + f.talep : "",
+        f.konut_durum ? "Konut: " + f.konut_durum + (f.kira_miktar ? " (" + f.kira_miktar + " TL)" : "") : "",
+        f.es_ad    ? "Eş: " + f.es_ad + (f.es_meslek ? " / " + f.es_meslek : "") : "",
+        f.cocuk_detay ? "Çocuklar: " + f.cocuk_detay : (f.cocuk ? f.cocuk + " çocuk" : ""),
+        f.fatura_durum === "var" ? "Fatura borcu: " + (f.fatura_borc || "var") : "",
+        mevcutGozlem ? "Mevcut uzman notu: " + mevcutGozlem : "",
+      ].filter(Boolean).join("\n");
+
+      messages.push({
+        role: "user",
+        content: `Sen Kuşadası Belediyesi Sosyal Hizmetler Müdürlüğü uzmanısın. Aşağıdaki bilgilere dayanarak SİR için resmi uzman gözlemi yaz. Sadece gözlem metnini yaz, başka hiçbir şey ekleme.
+
+${baglamMetni}`
+      });
     }
 
     const resp = await fetch("https://api.anthropic.com/v1/messages", {
@@ -1446,26 +1499,116 @@ ${fotoFile ? "- Fotoğraftaki/belgedeki görsel bilgileri de değerlendirmeye ka
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         model: "claude-sonnet-4-20250514",
-        max_tokens: 1000,
+        max_tokens: 1500,
         messages
       })
     });
 
     const data = await resp.json();
     if (data.error) throw new Error(data.error.message);
-    
-    aiRaporMetni = data.content?.find(b => b.type === "text")?.text || "";
-    if (!aiRaporMetni) throw new Error("Yanıt alınamadı");
 
-    durumEl.textContent = aiRaporMetni;
-    uygulaRow.style.display = "block";
+    const rawText = data.content?.find(b => b.type === "text")?.text || "";
+    if (!rawText) throw new Error("Yanıt alınamadı");
+
+    if (fotoFile && fotoFile.type.startsWith("image/")) {
+      // JSON parse et ve formu doldur
+      let jsonStr = rawText.trim();
+      // JSON bloğunu temizle
+      jsonStr = jsonStr.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/```\s*$/i, "").trim();
+
+      let parsed;
+      try { parsed = JSON.parse(jsonStr); }
+      catch(e) {
+        // JSON parse başarısız, ham metni gözleme koy
+        aiRaporMetni = rawText;
+        durumEl.style.background = "#fff7e6";
+        durumEl.style.border = "1.5px solid #f3d08a";
+        durumEl.style.color = "#8a5b00";
+        durumEl.textContent = "⚠️ Form otomatik doldurulamadı, metin olarak gösteriliyor:
+
+" + rawText;
+        uygulaRow.style.display = "block";
+        return;
+      }
+
+      // Formu doldur
+      const set = (id, v) => { const el = document.getElementById(id); if (el && v) el.value = v; };
+      set("ad_soyad",      parsed.ad_soyad);
+      set("tc",            parsed.tc);
+      set("dogum",         parsed.dogum);
+      set("telefon",       parsed.telefon);
+      set("adres",         parsed.adres);
+      set("meslek",        parsed.meslek);
+      set("cocuk",         parsed.cocuk);
+      set("es_ad",         parsed.es_ad);
+      set("es_meslek",     parsed.es_meslek);
+      set("cocuk_detay",   parsed.cocuk_detay);
+      set("basvuru_no",    parsed.basvuru_no);
+      set("basvuru_tarihi",parsed.basvuru_tarihi);
+      set("uzman_gozlemi", parsed.uzman_gozlemi);
+      aiRaporMetni = parsed.uzman_gozlemi || "";
+
+      if (parsed.medeni) {
+        const med = document.getElementById("medeni");
+        if (med) { med.value = parsed.medeni; medeniDegisti(); }
+      }
+      if (parsed.cinsiyet) {
+        const cins = document.getElementById("cinsiyet");
+        if (cins) cins.value = parsed.cinsiyet;
+      }
+      if (parsed.konut_durum) {
+        toggleVar("konut", parsed.konut_durum);
+        if (parsed.kira_miktar) set("kira_miktar", parsed.kira_miktar);
+      }
+
+      // Talep checkboxları
+      if (parsed.talep) {
+        const talpler = parsed.talep.split(",").map(t => t.trim());
+        document.getElementById("t_nakdi").checked   = talpler.some(t => t.includes("Nakdi"));
+        document.getElementById("t_erzak").checked   = talpler.some(t => t.includes("Erzak"));
+        document.getElementById("t_yasli").checked   = talpler.some(t => t.includes("Yaşlı"));
+        document.getElementById("t_evbakim").checked = talpler.some(t => t.includes("Evde"));
+        document.getElementById("t_diger").checked   = talpler.some(t => t.includes("Diğer"));
+        talepDegisti();
+      }
+
+      // Başarı mesajı
+      durumEl.style.background = "#ecfdf5";
+      durumEl.style.border = "1.5px solid #6ee7b7";
+      durumEl.style.color = "#065f46";
+      const doldurulan = [
+        parsed.ad_soyad && "Ad Soyad",
+        parsed.tc && "T.C.",
+        parsed.dogum && "Doğum",
+        parsed.medeni && "Medeni Durum",
+        parsed.adres && "Adres",
+        parsed.uzman_gozlemi && "Uzman Gözlemi",
+      ].filter(Boolean);
+      durumEl.textContent = "✅ Form otomatik dolduruldu!
+Doldurulan alanlar: " + doldurulan.join(", ") +
+        "\n\nEksik alanları manuel tamamlayıp kaydedin.";
+      uygulaRow.style.display = "none";
+      mesaj("✅ Fotoğraftan form dolduruldu!");
+
+    } else {
+      // Sadece gözlem metni
+      aiRaporMetni = rawText;
+      durumEl.style.background = "#f8f9fc";
+      durumEl.style.border = "1.5px solid var(--border)";
+      durumEl.style.color = "var(--text)";
+      durumEl.textContent = rawText;
+      uygulaRow.style.display = "block";
+    }
 
   } catch(err) {
+    durumEl.style.background = "#fef2f2";
+    durumEl.style.border = "1.5px solid #fca5a5";
+    durumEl.style.color = "#991b1b";
     durumEl.textContent = "⚠️ Hata: " + err.message;
     aiRaporMetni = "";
   } finally {
     btn.disabled = false;
-    btn.textContent = "🤖 AI ile Rapor Notu Oluştur";
+    btn.textContent = "🤖 Fotoğraftan Formu Doldur / Rapor Yaz";
   }
 }
 
@@ -1478,6 +1621,7 @@ function aiRaporUygula() {
     document.getElementById("ai-rapor-uygula-row").style.display = "none";
   }
 }
+
 
 // ── APP BAŞLAT ──
 function appBaslat() {

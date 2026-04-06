@@ -7,6 +7,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.3.136/pdf.min.js"></script>
 <script>
 window.__ocrReady = false;
 window.__ocrLoadingPromise = null;
@@ -578,7 +579,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; b
         <!-- AI RAPOR OLUŞTUR -->
         <div style="margin-top:4px;">
           <button class="btn btn-gold btn-block" onclick="aiRaporOlustur()" id="ai-rapor-btn">
-            🤖 Fotoğraftan Formu Doldur / Rapor Yaz
+            🤖 PDF / Fotoğraftan Üst Bilgileri Doldur
           </button>
           <div style="margin-top:6px;font-size:11px;color:var(--muted);text-align:center;">
             📸 Fotoğraf yüklersen → tüm formu otomatik doldurur<br>
@@ -1035,6 +1036,158 @@ function metindenAnahtarNotlar(text) {
   if (/3 çocuk|3 cocuk/.test(lower)) notlar.push("hanede üç çocuk bulunduğu");
   if (/20\.?000|20000/.test(lower)) notlar.push("aylık kira bedelinin yaklaşık 20.000 TL olduğu");
   return [...new Set(notlar)];
+}
+
+
+function toDisplayDate(raw) {
+  const m = (raw || "").match(/(\d{2})[./-](\d{2})[./-](\d{4})/);
+  return m ? `${m[1]}.${m[2]}.${m[3]}` : (raw || "").trim();
+}
+
+function temizDeger(v) {
+  return (v || "")
+    .replace(/^[\s:.-]+/, "")
+    .replace(/\s{2,}/g, " ")
+    .replace(/[|]/g, "I")
+    .trim();
+}
+
+function satirdanDegerAl(lines, label) {
+  const hedef = label.toLocaleLowerCase('tr-TR');
+  for (const line of lines) {
+    const lower = line.toLocaleLowerCase('tr-TR');
+    if (lower.startsWith(hedef)) {
+      return temizDeger(line.slice(label.length));
+    }
+  }
+  return "";
+}
+
+function normalizeOcrForLabels(text) {
+  return (text || "")
+    .replace(/\r/g, "\n")
+    .replace(/[\t]+/g, " ")
+    .replace(/\u00a0/g, " ")
+    .replace(/T\.\s*C\.\s*No/gi, "T.C. No")
+    .replace(/Tel\s*No/gi, "Tel No")
+    .replace(/Sosyal\s+İnceleme\s+Tarihi/gi, "Sosyal İnceleme Tarihi")
+    .replace(/Raporu\s+Düzenleyen/gi, "Raporu Düzenleyen")
+    .replace(/Kurumdan\s+Talebi/gi, "Kurumdan Talebi")
+    .replace(/Doğum\s+Tarihi/gi, "Doğum Tarihi")
+    .replace(/Medeni\s+Hali/gi, "Medeni Hali")
+    .replace(/Çocuk\s+Sayısı/gi, "Çocuk Sayısı")
+    .replace(/Ad[ıi]\s*Soyad[ıi]/gi, "Adı Soyadı")
+    .replace(/\n{2,}/g, "\n")
+    .trim();
+}
+
+function parseUstBilgiler(rawText) {
+  const text = normalizeOcrForLabels(rawText);
+  const lines = text.split("\n").map(s => s.trim()).filter(Boolean);
+  const result = {
+    ad_soyad: satirdanDegerAl(lines, "Adı Soyadı"),
+    cinsiyet: satirdanDegerAl(lines, "Cinsiyeti"),
+    tc: satirdanDegerAl(lines, "T.C. No").replace(/\D/g, "").slice(0, 11),
+    dogum_raw: satirdanDegerAl(lines, "Doğum Tarihi"),
+    medeni: satirdanDegerAl(lines, "Medeni Hali"),
+    cocuk: satirdanDegerAl(lines, "Çocuk Sayısı"),
+    meslek: satirdanDegerAl(lines, "Mesleği"),
+    talep: satirdanDegerAl(lines, "Kurumdan Talebi"),
+    adres: satirdanDegerAl(lines, "Adres"),
+    telefon: normalizeTelefon(satirdanDegerAl(lines, "Tel No")),
+    raporu_duzenleyen: satirdanDegerAl(lines, "Raporu Düzenleyen"),
+    basvuru_tarihi_raw: satirdanDegerAl(lines, "Başvuru Tarihi"),
+    sosyal_inceleme_tarihi_raw: satirdanDegerAl(lines, "Sosyal İnceleme Tarihi"),
+    rawText: text
+  };
+  result.dogum = trDateToInput(result.dogum_raw);
+  result.basvuru_tarihi = trDateToInput(result.basvuru_tarihi_raw);
+  result.sosyal_inceleme_tarihi = trDateToInput(result.sosyal_inceleme_tarihi_raw);
+  return result;
+}
+
+function uygulaUstBilgiler(parsed) {
+  const set = (id, val) => {
+    const el = document.getElementById(id);
+    if (el && val) el.value = val;
+  };
+  set('ad_soyad', parsed.ad_soyad);
+  set('tc', parsed.tc);
+  set('dogum', parsed.dogum);
+  set('telefon', parsed.telefon);
+  set('medeni', parsed.medeni);
+  set('cinsiyet', parsed.cinsiyet);
+  set('cocuk', parsed.cocuk);
+  set('meslek', parsed.meslek);
+  set('adres', parsed.adres);
+  set('basvuru_tarihi', parsed.basvuru_tarihi);
+  set('tarih', parsed.sosyal_inceleme_tarihi);
+
+  // Talep checkbox eşleştirme
+  const talepText = (parsed.talep || '').toLocaleLowerCase('tr-TR');
+  const talepMap = [
+    ['t_nakdi', /nakd[ıi]/],
+    ['t_erzak', /erzak/],
+    ['t_yasli', /yaşlı|yasli/],
+    ['t_evbakim', /evde bakım|evde bakim/],
+  ];
+  let matched = false;
+  for (const [id, rx] of talepMap) {
+    const el = document.getElementById(id);
+    if (!el) continue;
+    const ok = rx.test(talepText);
+    el.checked = ok;
+    if (ok) matched = true;
+  }
+  const diger = document.getElementById('t_diger');
+  if (diger) diger.checked = !!(parsed.talep && !matched);
+  const digerTalep = document.getElementById('diger_talep');
+  if (digerTalep && parsed.talep && !matched) digerTalep.value = parsed.talep;
+  try { talepDegisti(); } catch (e) {}
+
+  window.__sonOkunanUstBilgiler = parsed;
+
+  const doldurulan = [];
+  const labelMap = [
+    ['ad_soyad', 'Adı Soyadı'], ['cinsiyet', 'Cinsiyeti'], ['tc', 'T.C. No'], ['dogum_raw', 'Doğum Tarihi'],
+    ['medeni', 'Medeni Hali'], ['cocuk', 'Çocuk Sayısı'], ['meslek', 'Mesleği'], ['talep', 'Kurumdan Talebi'],
+    ['adres', 'Adres'], ['telefon', 'Tel No'], ['raporu_duzenleyen', 'Raporu Düzenleyen'],
+    ['basvuru_tarihi_raw', 'Başvuru Tarihi'], ['sosyal_inceleme_tarihi_raw', 'Sosyal İnceleme Tarihi']
+  ];
+  for (const [key, label] of labelMap) if (parsed[key]) doldurulan.push(label);
+  return doldurulan;
+}
+
+async function pdfdenMetinOku(file) {
+  if (!window.pdfjsLib) throw new Error("PDF okuma bileşeni yüklenemedi.");
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.3.136/pdf.worker.min.js";
+  const buf = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+  let all = [];
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    let lastY = null;
+    let line = [];
+    for (const item of content.items) {
+      const y = item.transform?.[5];
+      if (lastY !== null && Math.abs(y - lastY) > 3 && line.length) {
+        all.push(line.join(" ").trim());
+        line = [];
+      }
+      line.push(item.str);
+      lastY = y;
+    }
+    if (line.length) all.push(line.join(" ").trim());
+  }
+  return all.join("\n");
+}
+
+async function dosyadanMetinOku(file) {
+  if (!file) return '';
+  if (file.type.startsWith('image/')) return await gorseldenMetinOku(file);
+  if (file.type === 'application/pdf' || /\.pdf$/i.test(file.name || '')) return await pdfdenMetinOku(file);
+  throw new Error('Sadece fotoğraf veya PDF yükleyin.');
 }
 
 function parseEMasaBelgesi(rawText) {
@@ -1914,87 +2067,46 @@ async function aiRaporOlustur() {
   const durumEl = document.getElementById("ai-rapor-durum");
   const uygulaRow = document.getElementById("ai-rapor-uygula-row");
   const fotoInput = document.getElementById("foto-input");
-  const fotoFile = fotoInput?.files?.[0];
-
-  const g = (id) => {
-    const el = document.getElementById(id);
-    return el ? el.value.trim() : "";
-  };
-
-  const f = {
-    ad_soyad: g("ad_soyad"),
-    tc: g("tc"),
-    dogum: g("dogum"),
-    telefon: g("telefon"),
-    medeni: g("medeni"),
-    adres: g("adres"),
-    cinsiyet: g("cinsiyet"),
-    meslek: g("meslek"),
-    cocuk: g("cocuk"),
-    es_ad: g("es_ad"),
-    es_meslek: g("es_meslek"),
-    cocuk_detay: g("cocuk_detay"),
-    basvuru_no: g("basvuru_no"),
-    talep: "",
-    konut_durum: typeof konutDurum !== "undefined" ? konutDurum : "",
-    kira_miktar: g("kira_miktar"),
-    fatura_durum: typeof faturaDurum !== "undefined" ? faturaDurum : "",
-    fatura_borc: g("fatura_borc"),
-    uzman_gozlemi: g("uzman_gozlemi"),
-  };
-
-  try {
-    const talep = [];
-    if (document.getElementById("t_nakdi")?.checked) talep.push("Nakdi Yardım");
-    if (document.getElementById("t_erzak")?.checked) talep.push("Erzak");
-    if (document.getElementById("t_yasli")?.checked) talep.push("Yaşlı Bakım");
-    if (document.getElementById("t_evbakim")?.checked) talep.push("Evde Bakım");
-    if (document.getElementById("t_diger")?.checked) talep.push("Diğer");
-    f.talep = talep.join(", ");
-  } catch (e) {}
+  const dosya = fotoInput?.files?.[0];
 
   btn.disabled = true;
-  btn.textContent = "⏳ Fotoğraf analiz ediliyor…";
+  btn.textContent = "⏳ Dosya okunuyor…";
   durumEl.style.display = "block";
   uygulaRow.style.display = "none";
   durumEl.style.background = "#f0f4ff";
   durumEl.style.border = "1.5px solid #c7d2fe";
   durumEl.style.color = "#3730a3";
-  durumEl.textContent = fotoFile ? "📄 E-Masa formu okunuyor, alanlar dolduruluyor…" : "📝 Mevcut form verilerinden rapor hazırlanıyor…";
+  durumEl.textContent = dosya ? "📄 Dosya okunuyor, sadece üst bilgiler dolduruluyor…" : "⚠️ Önce fotoğraf veya PDF yükleyin.";
 
   try {
-    if (fotoFile && fotoFile.type.startsWith("image/")) {
-      const ocrText = await gorseldenMetinOku(fotoFile);
-      const sonuc = ocrMetnindenAlanlariDoldur(ocrText);
-      aiRaporMetni = buildUzmanGozlemiFromParsed(sonuc.parsed, getForm());
+    if (!dosya) throw new Error("Önce fotoğraf veya PDF yükleyin.");
+    const metin = await dosyadanMetinOku(dosya);
+    const parsed = parseUstBilgiler(metin);
+    const doldurulan = uygulaUstBilgiler(parsed);
+    aiRaporMetni = "";
 
-      const ozetSatirlari = [];
-      if (sonuc.parsed.ad_soyad) ozetSatirlari.push("• Ad Soyad: " + sonuc.parsed.ad_soyad);
-      if (sonuc.parsed.basvuru_no) ozetSatirlari.push("• Başvuru No: " + sonuc.parsed.basvuru_no);
-      if (sonuc.parsed.basvuru_tarihi) ozetSatirlari.push("• Başvuru Tarihi: " + sonuc.parsed.basvuru_tarihi);
-      if (sonuc.parsed.talep) ozetSatirlari.push("• Talep: " + sonuc.parsed.talep);
-      if (sonuc.parsed.telefon) ozetSatirlari.push("• Telefon: " + sonuc.parsed.telefon);
-      if (sonuc.parsed.adres) ozetSatirlari.push("• Adres: " + sonuc.parsed.adres);
-      if (sonuc.parsed.cocuk_detay) ozetSatirlari.push("• Çocuk Durumu: " + sonuc.parsed.cocuk_detay);
-      if (sonuc.parsed.kira_miktar) ozetSatirlari.push("• Kira: " + sonuc.parsed.kira_miktar + " TL");
+    const ozet = [];
+    if (parsed.ad_soyad) ozet.push("• Adı Soyadı: " + parsed.ad_soyad);
+    if (parsed.cinsiyet) ozet.push("• Cinsiyeti: " + parsed.cinsiyet);
+    if (parsed.tc) ozet.push("• T.C. No: " + parsed.tc);
+    if (parsed.dogum_raw) ozet.push("• Doğum Tarihi: " + toDisplayDate(parsed.dogum_raw));
+    if (parsed.medeni) ozet.push("• Medeni Hali: " + parsed.medeni);
+    if (parsed.cocuk) ozet.push("• Çocuk Sayısı: " + parsed.cocuk);
+    if (parsed.meslek) ozet.push("• Mesleği: " + parsed.meslek);
+    if (parsed.talep) ozet.push("• Kurumdan Talebi: " + parsed.talep);
+    if (parsed.adres) ozet.push("• Adres: " + parsed.adres);
+    if (parsed.telefon) ozet.push("• Tel No: " + parsed.telefon);
+    if (parsed.raporu_duzenleyen) ozet.push("• Raporu Düzenleyen: " + parsed.raporu_duzenleyen);
+    if (parsed.basvuru_tarihi_raw) ozet.push("• Başvuru Tarihi: " + toDisplayDate(parsed.basvuru_tarihi_raw));
+    if (parsed.sosyal_inceleme_tarihi_raw) ozet.push("• Sosyal İnceleme Tarihi: " + toDisplayDate(parsed.sosyal_inceleme_tarihi_raw));
 
-      durumEl.style.background = "#ecfdf5";
-      durumEl.style.border = "1.5px solid #6ee7b7";
-      durumEl.style.color = "#065f46";
-      durumEl.textContent =
-        "✅ Fotoğraf okundu.\n\n" +
-        (sonuc.doldurulan.length ? "Forma aktarılan alanlar: " + sonuc.doldurulan.join(", ") + "\n\n" : "") +
-        (ozetSatirlari.length ? ozetSatirlari.join("\n") + "\n\n" : "") +
-        "Oluşturulan uzman gözlemi:\n" + aiRaporMetni;
-      uygulaRow.style.display = "block";
-    } else {
-      aiRaporMetni = yerelRaporMetniOlustur(f);
-      durumEl.style.background = "#fff7e6";
-      durumEl.style.border = "1.5px solid #f3d08a";
-      durumEl.style.color = "#8a5b00";
-      durumEl.textContent = "ℹ️ Fotoğraf yok. Mevcut form verilerinden yerel rapor oluşturuldu:\n\n" + aiRaporMetni;
-      uygulaRow.style.display = "block";
-    }
+    durumEl.style.background = "#ecfdf5";
+    durumEl.style.border = "1.5px solid #6ee7b7";
+    durumEl.style.color = "#065f46";
+    durumEl.textContent =
+      "✅ Üst bilgiler okundu.\n\n" +
+      (doldurulan.length ? "Forma aktarılan alanlar: " + doldurulan.join(", ") + "\n\n" : "Hiç alan eşleşmedi.\n\n") +
+      (ozet.length ? ozet.join("\n") : "Belgede üst bilgi alanları bulunamadı.");
   } catch (err) {
     durumEl.style.background = "#fef2f2";
     durumEl.style.border = "1.5px solid #fca5a5";
@@ -2003,11 +2115,12 @@ async function aiRaporOlustur() {
     aiRaporMetni = "";
   } finally {
     btn.disabled = false;
-    btn.textContent = "🤖 Fotoğraftan Formu Doldur / Rapor Yaz";
+    btn.textContent = "🤖 PDF / Fotoğraftan Üst Bilgileri Doldur";
   }
 }
 
 function aiRaporUygula() {
+
   if (!aiRaporMetni) return;
   const el = document.getElementById("uzman_gozlemi");
   if (el) {

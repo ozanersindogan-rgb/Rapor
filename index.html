@@ -589,7 +589,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; b
 <script>
 // ── ANTHROPIC PROXY ──
 // Google Apps Script deploy URL'sini buraya yapıştır:
-const ANTHROPIC_PROXY = "https://script.google.com/macros/s/AKfycbwzuJMeFyBgvADuFk1ZKrUIRCZ00F748CVYMqScbac/dev";
+const ANTHROPIC_PROXY = "https://script.google.com/macros/s/AKfycbwzuJMeFyBgvADuFk1ZKrUIRCZ00F748CVYMqScbac/exec";
 // Nasıl kurulur: https://script.google.com → Yeni Proje → aşağıdaki kodu yapıştır → Dağıt → Web Uygulaması
 
 const FIREBASE_CONFIG = {
@@ -1459,14 +1459,15 @@ ${baglamMetni}`
       });
     }
 
+    const payload = JSON.stringify({
+      model: "claude-sonnet-4-5",
+      max_tokens: 1500,
+      messages
+    });
+
     const resp = await fetch(ANTHROPIC_PROXY, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-5",
-        max_tokens: 1500,
-        messages
-      })
+      body: payload
     });
 
     if (!resp.ok) {

@@ -231,6 +231,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; b
   .btn { padding: 10px 14px; font-size: 13px; }
 }
 </style>
+<script src="https://unpkg.com/tesseract.js@5/dist/tesseract.min.js"></script>
 </head>
 <body>
 
@@ -1341,6 +1342,116 @@ function cikisYap() {
 
 
 // ── AI RAPOR OLUŞTUR ──
+
+function ocrNormalize(s) {
+  return String(s || "")
+    .replace(/[|]/g, 'I')
+    .replace(/[“”]/g, '"')
+    .replace(/[‘’]/g, "'")
+    .replace(/\u00A0/g, ' ')
+    .replace(/[ \t]+/g, ' ')
+    .replace(/\r/g, '')
+    .trim();
+}
+
+function tarihToInputFormat(v) {
+  const m = String(v || '').match(/(\d{2})[./-](\d{2})[./-](\d{4})/);
+  if (!m) return '';
+  return `${m[3]}-${m[2]}-${m[1]}`;
+}
+
+function onlyDigits(v) {
+  return String(v || '').replace(/\D+/g, '');
+}
+
+function satirSonuDeger(text, labelRegex) {
+  const m = text.match(labelRegex);
+  return m ? ocrNormalize(m[1]) : '';
+}
+
+function parseKisiBilgileriFromOcr(rawText) {
+  const text = ocrNormalize(rawText)
+    .replace(/AD,\s*SOYAD/g, 'AD SOYAD')
+    .replace(/SICIL\s*NO/g, 'SICILNO')
+    .replace(/TCKimlik\/Vergi\s*No/gi, 'TCKIMLIKVERGINO')
+    .replace(/D\.TAR[iİ]H[iİ]/gi, 'DTARIHI')
+    .replace(/MAH\.\/K[ÖO]Y/gi, 'MAHKOY')
+    .replace(/AD\/SOYAD/gi, 'ADSOYAD')
+    .replace(/İ/g, 'I');
+
+  const lines = text.split(/\n+/).map(x => x.trim()).filter(Boolean);
+  const joined = lines.join('\n');
+
+  let adSoyad = satirSonuDeger(joined, /AD SOYAD\s*\/\s*UNVAN\s*:?\s*([^\n]+)/i) ||
+                satirSonuDeger(joined, /ADSOYAD\s*\/\s*UNVAN\s*:?\s*([^\n]+)/i);
+  let tc = onlyDigits(satirSonuDeger(joined, /TCKIMLIKVERGINO\s*:?\s*([^\n]+)/i));
+  let dogumRaw = satirSonuDeger(joined, /DTARIHI\s*:?\s*([^\n]+)/i);
+  let telefon = onlyDigits(satirSonuDeger(joined, /GSM\s*:?\s*([^\n]+)/i) || satirSonuDeger(joined, /TELEFON\s*:?\s*([^\n]+)/i));
+  let ilce = satirSonuDeger(joined, /ILCE\s*:?\s*([^\n]+)/i);
+  let mah = satirSonuDeger(joined, /MAHKOY\s*:?\s*([^\n]+)/i);
+  let aciklama = satirSonuDeger(joined, /ACIKLAMA\s*:?\s*([^\n]+)/i);
+
+  if (!adSoyad) {
+    for (let i = 0; i < lines.length; i++) {
+      if (/AD SOYAD\s*\/\s*UNVAN/i.test(lines[i]) && lines[i + 1] && !/E-POSTA|SICILNO/i.test(lines[i + 1])) {
+        adSoyad = lines[i + 1].trim();
+        break;
+      }
+    }
+  }
+  if (!tc) {
+    const m = joined.match(/(?:TCKIMLIKVERGINO|TC\s*KIMLIK\s*VERGI\s*NO)[^\d]{0,10}(\d{11})/i);
+    if (m) tc = m[1];
+  }
+  if (!dogumRaw) {
+    const m = joined.match(/(?:DTARIHI|DOGUM\s*TARIHI)[^\d]{0,10}(\d{2}[./-]\d{2}[./-]\d{4})/i);
+    if (m) dogumRaw = m[1];
+  }
+  if (!telefon || telefon.length < 10) {
+    const m = joined.match(/(?:GSM|TELEFON)[^\d]{0,10}(0?5\d{9})/i);
+    if (m) telefon = onlyDigits(m[1]);
+  }
+
+  let adres = '';
+  const ikamet = aciklama.match(/([A-ZÇĞİÖŞÜ0-9\s.,/-]{8,}?)\s+IKAMET EDIYORUM/i);
+  if (ikamet) adres = ocrNormalize(ikamet[1]);
+  if (!adres) {
+    const parts = [mah, ilce].filter(Boolean);
+    adres = parts.join(' / ');
+  }
+
+  if (telefon.length === 10) telefon = '0' + telefon;
+  if (tc.length !== 11) tc = '';
+
+  return {
+    ad_soyad: adSoyad,
+    tc,
+    dogum: tarihToInputFormat(dogumRaw),
+    telefon,
+    medeni: '',
+    cinsiyet: '',
+    adres,
+    meslek: '',
+    cocuk: '',
+    es_ad: '',
+    es_meslek: '',
+    cocuk_detay: ''
+  };
+}
+
+async function fotoKisiBilgileriOku(file, durumEl) {
+  if (!window.Tesseract) throw new Error('OCR bileşeni yüklenemedi');
+  const result = await Tesseract.recognize(file, 'tur+eng', {
+    logger: (m) => {
+      if (!durumEl) return;
+      if (m.status === 'recognizing text') {
+        durumEl.textContent = `📖 Belge okunuyor... %${Math.round((m.progress || 0) * 100)}`;
+      }
+    }
+  });
+  return parseKisiBilgileriFromOcr(result?.data?.text || '');
+}
+
 let aiRaporMetni = "";
 
 async function aiRaporOlustur() {
@@ -1385,7 +1496,7 @@ async function aiRaporOlustur() {
   durumEl.style.border = "1.5px solid #c7d2fe";
   durumEl.style.color = "#3730a3";
   durumEl.textContent = (fotoFile && fotoBase64)
-    ? "📸 Belge okunuyor, form dolduruluyor…"
+    ? "📸 Belge tarayıcıda okunuyor, kişi bilgileri dolduruluyor…"
     : "🤖 Mevcut bilgilerden gözlem yazılıyor…";
   uygulaRow.style.display = "none";
 
@@ -1397,43 +1508,28 @@ async function aiRaporOlustur() {
     const isPdf   = hasFoto && fotoMimeType === "application/pdf";
 
     if (hasFoto && (isImage || isPdf)) {
-      // ── FOTOĞRAF / PDF'TEN TAM FORM DOLDUR ──
-      const b64 = fotoBase64;
+      const parsed = await fotoKisiBilgileriOku(fotoFile, durumEl);
+      const set = (id, v) => { const el = document.getElementById(id); if (el && v) el.value = v; };
+      set("ad_soyad",      parsed.ad_soyad);
+      set("tc",            parsed.tc);
+      set("dogum",         parsed.dogum);
+      set("telefon",       parsed.telefon);
+      set("adres",         parsed.adres);
+      set("meslek",        parsed.meslek);
+      set("cocuk",         parsed.cocuk);
+      set("es_ad",         parsed.es_ad);
+      set("es_meslek",     parsed.es_meslek);
+      set("cocuk_detay",   parsed.cocuk_detay);
+      if (parsed.medeni) setToggleByValue("medeni", parsed.medeni);
+      if (parsed.cinsiyet) setToggleByValue("cinsiyet", parsed.cinsiyet);
 
-      const fotoPrompt = `Bu fotoğraf/belge, bir belediye sosyal yardım başvurusuna ait bir belgedir.
-
-Görevin şu:
-1. Fotoğraftaki sadece KİŞİ BİLGİSİ alanlarını oku.
-2. Görüşme Bilgileri, Başvuru Tarihi, Başvuru No, talep işaretleri ve uzman gözlemi gibi alanları doldurma.
-3. Bilgi net değilse boş bırak.
-4. Sadece JSON döndür, başka hiçbir şey yazma.
-
-JSON formatı:
-{
-  "ad_soyad": "",
-  "tc": "",
-  "dogum": "YYYY-MM-DD formatında",
-  "telefon": "",
-  "medeni": "Bekar/Evli/Boşanmış/Dul",
-  "cinsiyet": "Kadın/Erkek",
-  "adres": "",
-  "meslek": "",
-  "cocuk": "",
-  "es_ad": "",
-  "es_meslek": "",
-  "cocuk_detay": ""
-}`;
-
-      messages.push({
-        role: "user",
-        content: [
-          (isPdf
-            ? { type: "document", source: { type: "base64", media_type: "application/pdf", data: b64 } }
-            : { type: "image",    source: { type: "base64", media_type: fotoMimeType,       data: b64 } }
-          ),
-          { type: "text", text: fotoPrompt }
-        ]
-      });
+      durumEl.style.background = "#ecfdf5";
+      durumEl.style.border = "1.5px solid #6ee7b7";
+      durumEl.style.color = "#065f46";
+      durumEl.textContent = "✅ Kişi bilgileri fotoğraftan dolduruldu. Başvuru bilgileri ve görüşme tarihi boş bırakıldı.";
+      uygulaRow.style.display = "none";
+      mesaj("✅ Kişi bilgileri fotoğraftan dolduruldu!");
+      return;
 
     } else {
       // ── MEVCUT VERİDEN SADECE GÖZLEMİ YAZ ──

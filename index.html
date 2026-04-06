@@ -1824,5 +1824,119 @@ window.akilliDoldur = function(rawText){
 };
 </script>
 
+
+<script>
+// === ANLIK GÖRÜNME + GÜÇLÜ DEĞER YAZMA FIX ===
+(function () {
+  function setNativeValue(el, value) {
+    if (!el) return;
+    const proto = Object.getPrototypeOf(el);
+    const desc = Object.getOwnPropertyDescriptor(proto, "value");
+    if (desc && typeof desc.set === "function") {
+      desc.set.call(el, value);
+    } else {
+      el.value = value;
+    }
+  }
+
+  window.setVal = function(selectors, value){
+    if (!value) return false;
+
+    let yazildi = false;
+
+    selectors.forEach(sel => {
+      const el = document.querySelector(sel);
+      if (!el) return;
+
+      const lastValue = el.value;
+      setNativeValue(el, value);
+
+      if (el._valueTracker) {
+        el._valueTracker.setValue(lastValue);
+      }
+
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+      el.dispatchEvent(new Event("change", { bubbles: true }));
+      yazildi = true;
+    });
+
+    return yazildi;
+  };
+
+  window.akilliDoldur = function(rawText){
+    const t = String(rawText || "").replace(/\s+/g, " ");
+
+    const ad = (t.match(/AD[,\.\s]*SOYAD[:\s]+([A-ZÇĞİÖŞÜ\s]+)/i) || [])[1]?.trim() || "";
+    const tc = (t.match(/\b\d{11}\b/) || [])[0] || "";
+    const dt = (t.match(/\d{2}[\/\.\-]\d{2}[\/\.\-]\d{4}/) || [])[0] || "";
+    const tel = (t.match(/5\d{9}/) || [])[0] || "";
+    const mahalle = (t.match(/MAH.*?:?\s*([A-ZÇĞİÖŞÜ\s]+)/i) || [])[1]?.trim() || "";
+
+    setVal([
+      'input[name="adSoyad"]',
+      '#adSoyad',
+      '#ad',
+      'input[placeholder*="Ad"]',
+      'input[placeholder*="ad"]'
+    ], ad);
+
+    setVal([
+      'input[name="tcKimlik"]',
+      '#tc',
+      '#tcKimlik',
+      'input[placeholder*="TC"]',
+      'input[placeholder*="Kimlik"]'
+    ], tc);
+
+    setVal([
+      'input[name="dogumTarihi"]',
+      '#dogum',
+      '#dogumTarihi',
+      'input[placeholder*="Doğum"]',
+      'input[placeholder*="dogum"]'
+    ], dt);
+
+    setVal([
+      'input[name="gsm"]',
+      '#telefon',
+      '#gsm',
+      'input[name="telefon"]',
+      'input[placeholder*="Telefon"]',
+      'input[placeholder*="GSM"]'
+    ], tel);
+
+    setVal([
+      'input[name="mahalle"]',
+      'input[name="adres"]',
+      '#mahalle',
+      '#adres',
+      'input[placeholder*="Mahalle"]',
+      'input[placeholder*="Adres"]'
+    ], mahalle);
+
+    document.querySelectorAll("input, textarea, select").forEach(el => {
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+      el.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+
+    setTimeout(() => {
+      document.querySelectorAll("input, textarea").forEach(el => {
+        try {
+          el.blur();
+          el.focus();
+          el.blur();
+        } catch (e) {
+          // no-op
+        }
+      });
+
+      if (typeof window.ocrBitti === "function") {
+        window.ocrBitti();
+      }
+    }, 200);
+  };
+})();
+</script>
+
 </body>
 </html>

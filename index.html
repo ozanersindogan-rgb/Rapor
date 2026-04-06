@@ -602,6 +602,87 @@ firebase.initializeApp(FIREBASE_CONFIG);
 const db  = firebase.firestore();
 const col = db.collection("raporlar");
 
+function kullaniciKey() {
+  return (aktifKullanici || "misafir").toLowerCase().replace(/[^a-z0-9çğıöşü]+/gi, "_");
+}
+function localKayitKey() {
+  return "sir_raporlar_" + kullaniciKey();
+}
+function localOku() {
+  try {
+    const raw = localStorage.getItem(localKayitKey());
+    const arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? arr : [];
+  } catch (e) {
+    return [];
+  }
+}
+function localYaz(arr) {
+  localStorage.setItem(localKayitKey(), JSON.stringify(arr || []));
+}
+function kayitSahibi(f) {
+  return (f && (f.createdBy || f.owner || f.kullanici)) || aktifKullanici || "";
+}
+function formuKaydaHazirla(f, onceki) {
+  const sahibi = kayitSahibi(onceki) || aktifKullanici || "";
+  return {
+    ...(onceki || {}),
+    ...f,
+    createdBy: sahibi,
+    owner: sahibi,
+    kullanici: sahibi,
+  };
+}
+function localDocGet(id) {
+  const arr = localOku();
+  const item = arr.find(x => x.id === id);
+  return item ? { exists: true, id, data: () => ({ ...item }) } : { exists: false, id, data: () => null };
+}
+function localDocSet(id, data) {
+  const arr = localOku();
+  const idx = arr.findIndex(x => x.id === id);
+  const now = new Date().toISOString();
+  const mevcut = idx >= 0 ? arr[idx] : null;
+  const kayit = {
+    id,
+    ...(mevcut || {}),
+    ...data,
+    updatedAt: now,
+    createdAt: mevcut?.createdAt || now,
+  };
+  if (idx >= 0) arr[idx] = kayit; else arr.push(kayit);
+  localYaz(arr);
+  return kayit;
+}
+function localDocAdd(data) {
+  const id = "local_" + Date.now().toString(36) + Math.random().toString(36).slice(2,8);
+  const kayit = localDocSet(id, data);
+  return { id, ...kayit };
+}
+function localDocDelete(id) {
+  const arr = localOku().filter(x => x.id !== id);
+  localYaz(arr);
+}
+function localTumunuSil() {
+  localYaz([]);
+}
+function siraliKayitlar(arr) {
+  return [...arr].sort((a,b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
+}
+function yerelRaporMetniOlustur(f) {
+  const bolumler = [];
+  const oyku = typeof oykuYaz === "function" ? oykuYaz(f) : "";
+  const deger = typeof degerlendirmeYaz === "function" ? degerlendirmeYaz(f) : "";
+  if (oyku) bolumler.push(oyku);
+  if (deger) bolumler.push(deger);
+  if (f.uzman_gozlemi && f.uzman_gozlemi.trim()) bolumler.push(f.uzman_gozlemi.trim());
+  const talep = f.talep ? "Vatandaşın talebi " + f.talep + " olarak değerlendirilmiştir." : "";
+  if (talep) bolumler.push(talep);
+  return bolumler.filter(Boolean).join("
+
+").trim() || "Uzman gözlemi oluşturulamadı.";
+}
+
 // ── PIN ──
 let _pin = "";
 let aktifKullanici = "";
@@ -973,17 +1054,39 @@ async function kaydet() {
   }
   try {
     if (secili) {
-      await col.doc(secili).update({ ...f, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+      let onceki = null;
+      try {
+        const mevcut = await col.doc(secili).get();
+        onceki = mevcut.exists ? mevcut.data() : null;
+      } catch(_) {
+        const mevcutLocal = localDocGet(secili);
+        onceki = mevcutLocal.exists ? mevcutLocal.data() : null;
+      }
+      const payload = formuKaydaHazirla(f, onceki);
+      try {
+        await col.doc(secili).update({ ...payload, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+      } catch(err) {
+        localDocSet(secili, payload);
+        console.warn("Firebase update başarısız, local kayıt kullanıldı:", err);
+      }
       mesaj("✅ Güncellendi!");
     } else {
-      const ref = await col.add({ ...f, createdAt: firebase.firestore.FieldValue.serverTimestamp(), updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
-      secili = ref.id;
+      const payload = formuKaydaHazirla(f);
+      try {
+        const ref = await col.add({ ...payload, createdAt: firebase.firestore.FieldValue.serverTimestamp(), updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+        secili = ref.id;
+      } catch(err) {
+        const yerel = localDocAdd(payload);
+        secili = yerel.id;
+        console.warn("Firebase add başarısız, local kayıt kullanıldı:", err);
+      }
       document.getElementById("kaydet-label").textContent = "Güncelle";
       mesaj("✅ Kaydedildi!");
     }
     await yukle();
   } catch(err) { mesaj("Hata: " + err.message, false); }
 }
+
 
 // ── YENİ FORM ──
 function yeniForm() {
@@ -997,37 +1100,60 @@ function yeniForm() {
 // ── AÇ ──
 async function ac(id) {
   try {
-    const snap = await col.doc(id).get();
+    let snap;
+    try {
+      snap = await col.doc(id).get();
+    } catch(_) {
+      snap = localDocGet(id);
+    }
+    if (!snap.exists) snap = localDocGet(id);
     if (!snap.exists) { mesaj("Kayıt bulunamadı!", false); return; }
+    const veri = snap.data();
+    if (kayitSahibi(veri) && aktifKullanici && kayitSahibi(veri) !== aktifKullanici) {
+      mesaj("Bu kayıt başka kullanıcıya ait.", false); return;
+    }
     secili = id;
-    setForm(snap.data());
+    setForm(veri);
     document.getElementById("kaydet-label").textContent = "Güncelle";
     gosterTab("form");
     window.scrollTo({ top: 0, behavior: "smooth" });
   } catch(err) { mesaj("Hata: " + err.message, false); }
 }
 
+
 // ── SİL ──
 async function sil(id) {
   if (!confirm("Bu kaydı silmek istediğinize emin misiniz?")) return;
   try {
-    await col.doc(id).delete();
+    try {
+      await col.doc(id).delete();
+    } catch(err) {
+      console.warn("Firebase delete başarısız, local silme kullanıldı:", err);
+    }
+    localDocDelete(id);
     if (secili === id) { secili = null; document.getElementById("kaydet-label").textContent = "Kaydet"; }
     await yukle(); renderListe();
     mesaj("🗑️ Silindi.");
   } catch(err) { mesaj("Hata: " + err.message, false); }
 }
 
+
 // ── TÜMÜNÜ SİL ──
 async function tumunuSil() {
   if (!confirm("Tüm kayıtlar silinecek! Emin misiniz?")) return;
   try {
-    const snap = await col.get();
-    await Promise.all(snap.docs.map(d => d.ref.delete()));
+    try {
+      const snap = await col.where("createdBy", "==", aktifKullanici || "").get();
+      await Promise.all(snap.docs.map(d => d.ref.delete()));
+    } catch(err) {
+      console.warn("Firebase toplu silme başarısız, local silme kullanıldı:", err);
+    }
+    localTumunuSil();
     cache = []; secili = null; renderListe(); await yukle();
-    mesaj("🗑️ Tüm kayıtlar silindi.");
+    mesaj("🗑️ Aktif kullanıcıya ait tüm kayıtlar silindi.");
   } catch(err) { mesaj("Hata: " + err.message, false); }
 }
+
 
 // ── SEÇİM ──
 function tumunuSec() { cache.forEach(k => secilenler.add(k.id)); renderListe(); }
@@ -1037,8 +1163,18 @@ function toggleSecim(id) { secilenler.has(id) ? secilenler.delete(id) : secilenl
 // ── YÜKLE ──
 async function yukle() {
   try {
-    const snap = await col.orderBy("createdAt","desc").get();
-    cache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    let kayitlar = [];
+    try {
+      const snap = await col.where("createdBy", "==", aktifKullanici || "").orderBy("createdAt","desc").get();
+      kayitlar = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    } catch(err) {
+      console.warn("Firebase yükleme başarısız, local kayıtlar kullanıldı:", err);
+      kayitlar = [];
+    }
+    const yerel = localOku().filter(k => kayitSahibi(k) === (aktifKullanici || ""));
+    const map = new Map();
+    [...kayitlar, ...yerel].forEach(k => { if (k && k.id) map.set(k.id, k); });
+    cache = siraliKayitlar(Array.from(map.values()));
     const n = cache.length;
     const badge = document.getElementById("kayit-sayisi");
     badge.style.display = n > 0 ? "inline" : "none";
@@ -1046,6 +1182,7 @@ async function yukle() {
     document.getElementById("btn-tumunu-sil").style.display = n > 0 ? "inline-flex" : "none";
   } catch(err) { console.error("Yükleme hatası:", err); }
 }
+
 
 // ── LİSTE RENDER ──
 function renderListe() {
@@ -1380,23 +1517,24 @@ async function aiRaporOlustur() {
   const fotoInput = document.getElementById("foto-input");
   const fotoFile = fotoInput?.files?.[0];
 
-  // Güvenli alan okuyucu (null kontrolü ile)
   const g = (id) => { const el = document.getElementById(id); return el ? el.value.trim() : ""; };
   const mevcutGozlem = g("uzman_gozlemi");
-
-  // Mevcut form verilerini güvenli şekilde topla (getForm() yerine)
   const f = {
     ad_soyad: g("ad_soyad"), tc: g("tc"), dogum: g("dogum"),
     telefon: g("telefon"), medeni: g("medeni"), adres: g("adres"),
-    meslek: g("meslek"), cocuk: g("cocuk"), es_ad: g("es_ad"),
+    cinsiyet: g("cinsiyet"), meslek: g("meslek"), cocuk: g("cocuk"), es_ad: g("es_ad"),
     es_meslek: g("es_meslek"), cocuk_detay: g("cocuk_detay"),
     basvuru_no: g("basvuru_no"), talep: "",
     konut_durum: typeof konutDurum !== "undefined" ? konutDurum : "",
     kira_miktar: g("kira_miktar"),
     fatura_durum: typeof faturaDurum !== "undefined" ? faturaDurum : "",
     fatura_borc: g("fatura_borc"),
+    uzman_gozlemi: mevcutGozlem,
+    arac: typeof aracDurum !== "undefined" ? aracDurum : "",
+    tapu: typeof tapuDurum !== "undefined" ? tapuDurum : "",
+    arac_not: g("arac_not"),
+    tapu_not: g("tapu_not"),
   };
-  // Talep checkboxları
   try {
     const talep = [];
     if (document.getElementById("t_nakdi")?.checked)   talep.push("Nakdi Yardım");
@@ -1408,57 +1546,28 @@ async function aiRaporOlustur() {
   } catch(e) {}
 
   btn.disabled = true;
-  btn.textContent = "⏳ Analiz ediliyor…";
+  btn.textContent = "⏳ Rapor hazırlanıyor…";
   durumEl.style.display = "block";
   durumEl.style.background = "#f0f4ff";
   durumEl.style.border = "1.5px solid #c7d2fe";
   durumEl.style.color = "#3730a3";
   durumEl.textContent = fotoFile
-    ? "📸 Fotoğraf okunuyor, form dolduruluyor…"
-    : "🤖 Mevcut bilgilerden gözlem yazılıyor…";
+    ? "📸 Fotoğraf algılandı. Önce çevrim içi analiz denenecek…"
+    : "🤖 Mevcut bilgilerden rapor hazırlanıyor…";
   uygulaRow.style.display = "none";
 
   try {
     const messages = [];
 
     if (fotoFile && fotoFile.type.startsWith("image/")) {
-      // ── FOTOĞRAFTAN TAM FORM DOLDUR ──
       const b64 = await new Promise((res, rej) => {
         const r = new FileReader();
         r.onload = () => res(r.result.split(",")[1]);
         r.onerror = rej;
         r.readAsDataURL(fotoFile);
       });
-
       const fotoPrompt = `Bu fotoğraf/belge, bir belediye sosyal yardım başvurusuna ait bir belgedir.
-
-Görevin şu:
-1. Fotoğraftaki/belgdeki tüm kişi ve başvuru bilgilerini oku.
-2. Aşağıdaki JSON formatında döndür (bilgi yoksa ilgili alanı boş bırak).
-3. Sadece JSON döndür, başka hiçbir şey yazma.
-
-JSON formatı:
-{
-  "ad_soyad": "",
-  "tc": "",
-  "dogum": "YYYY-MM-DD formatında",
-  "telefon": "",
-  "medeni": "Bekar/Evli/Boşanmış/Dul",
-  "cinsiyet": "Kadın/Erkek",
-  "adres": "",
-  "meslek": "",
-  "cocuk": "",
-  "es_ad": "",
-  "es_meslek": "",
-  "cocuk_detay": "",
-  "basvuru_no": "",
-  "basvuru_tarihi": "YYYY-MM-DD formatında",
-  "talep": "Nakdi Yardım/Erzak/Yaşlı Bakım/Evde Bakım/Diğer (virgülle ayır)",
-  "konut_durum": "kira/kendisi/akraba",
-  "kira_miktar": "",
-  "uzman_gozlemi": "Belgeden çıkan bilgilere göre resmi SİR diliyle 150-250 kelime uzman gözlemi. 3. şahıs, geçmiş zaman bildirme kipi kullan. gözlemlenmiştir, belirtmiştir, tespit edilmiştir gibi resmi ifadeler kullan."
-}`;
-
+Sadece JSON döndür. Bilgi yoksa boş bırak.`;
       messages.push({
         role: "user",
         content: [
@@ -1466,9 +1575,7 @@ JSON formatı:
           { type: "text", text: fotoPrompt }
         ]
       });
-
     } else {
-      // ── MEVCUT VERİDEN SADECE GÖZLEMİ YAZ ──
       const baglamMetni = [
         f.ad_soyad ? "Kişi: " + f.ad_soyad : "",
         f.medeni   ? "Medeni: " + f.medeni : "",
@@ -1481,118 +1588,55 @@ JSON formatı:
         f.cocuk_detay ? "Çocuklar: " + f.cocuk_detay : (f.cocuk ? f.cocuk + " çocuk" : ""),
         f.fatura_durum === "var" ? "Fatura borcu: " + (f.fatura_borc || "var") : "",
         mevcutGozlem ? "Mevcut uzman notu: " + mevcutGozlem : "",
-      ].filter(Boolean).join("\n");
-
+      ].filter(Boolean).join("
+");
       messages.push({
         role: "user",
-        content: `Sen Kuşadası Belediyesi Sosyal Hizmetler Müdürlüğü uzmanısın. Aşağıdaki bilgilere dayanarak SİR için resmi uzman gözlemi yaz. Sadece gözlem metnini yaz, başka hiçbir şey ekleme.
+        content: `Sen Kuşadası Belediyesi Sosyal Hizmetler Müdürlüğü uzmanısın. Aşağıdaki bilgilere dayanarak SİR için resmi uzman gözlemi yaz. Sadece gözlem metnini yaz.
 
 ${baglamMetni}`
       });
     }
 
-    const resp = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 1500,
-        messages
-      })
-    });
-
-    const data = await resp.json();
-    if (data.error) throw new Error(data.error.message);
-
-    const rawText = data.content?.find(b => b.type === "text")?.text || "";
-    if (!rawText) throw new Error("Yanıt alınamadı");
-
-    if (fotoFile && fotoFile.type.startsWith("image/")) {
-      // JSON parse et ve formu doldur
-      let jsonStr = rawText.trim();
-      // JSON bloğunu temizle
-      jsonStr = jsonStr.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/```\s*$/i, "").trim();
-
-      let parsed;
-      try { parsed = JSON.parse(jsonStr); }
-      catch(e) {
-        // JSON parse başarısız, ham metni gözleme koy
-        aiRaporMetni = rawText;
-        durumEl.style.background = "#fff7e6";
-        durumEl.style.border = "1.5px solid #f3d08a";
-        durumEl.style.color = "#8a5b00";
-        durumEl.textContent = "⚠️ Form otomatik doldurulamadı, metin olarak gösteriliyor:\n\n" + rawText;
+    try {
+      const resp = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 1500,
+          messages
+        })
+      });
+      const data = await resp.json();
+      if (data.error) throw new Error(data.error.message || "AI servisi hata verdi");
+      const rawText = data.content?.find(b => b.type === "text")?.text || "";
+      if (!rawText) throw new Error("Yanıt alınamadı");
+      if (!fotoFile) {
+        aiRaporMetni = rawText.trim();
+        durumEl.style.background = "#ecfdf5";
+        durumEl.style.border = "1.5px solid #6ee7b7";
+        durumEl.style.color = "#065f46";
+        durumEl.textContent = aiRaporMetni;
         uygulaRow.style.display = "block";
         return;
       }
-
-      // Formu doldur
-      const set = (id, v) => { const el = document.getElementById(id); if (el && v) el.value = v; };
-      set("ad_soyad",      parsed.ad_soyad);
-      set("tc",            parsed.tc);
-      set("dogum",         parsed.dogum);
-      set("telefon",       parsed.telefon);
-      set("adres",         parsed.adres);
-      set("meslek",        parsed.meslek);
-      set("cocuk",         parsed.cocuk);
-      set("es_ad",         parsed.es_ad);
-      set("es_meslek",     parsed.es_meslek);
-      set("cocuk_detay",   parsed.cocuk_detay);
-      set("basvuru_no",    parsed.basvuru_no);
-      set("basvuru_tarihi",parsed.basvuru_tarihi);
-      set("uzman_gozlemi", parsed.uzman_gozlemi);
-      aiRaporMetni = parsed.uzman_gozlemi || "";
-
-      if (parsed.medeni) {
-        const med = document.getElementById("medeni");
-        if (med) { med.value = parsed.medeni; medeniDegisti(); }
-      }
-      if (parsed.cinsiyet) {
-        const cins = document.getElementById("cinsiyet");
-        if (cins) cins.value = parsed.cinsiyet;
-      }
-      if (parsed.konut_durum) {
-        toggleVar("konut", parsed.konut_durum);
-        if (parsed.kira_miktar) set("kira_miktar", parsed.kira_miktar);
-      }
-
-      // Talep checkboxları
-      if (parsed.talep) {
-        const talpler = parsed.talep.split(",").map(t => t.trim());
-        document.getElementById("t_nakdi").checked   = talpler.some(t => t.includes("Nakdi"));
-        document.getElementById("t_erzak").checked   = talpler.some(t => t.includes("Erzak"));
-        document.getElementById("t_yasli").checked   = talpler.some(t => t.includes("Yaşlı"));
-        document.getElementById("t_evbakim").checked = talpler.some(t => t.includes("Evde"));
-        document.getElementById("t_diger").checked   = talpler.some(t => t.includes("Diğer"));
-        talepDegisti();
-      }
-
-      // Başarı mesajı
-      durumEl.style.background = "#ecfdf5";
-      durumEl.style.border = "1.5px solid #6ee7b7";
-      durumEl.style.color = "#065f46";
-      const doldurulan = [
-        parsed.ad_soyad && "Ad Soyad",
-        parsed.tc && "T.C.",
-        parsed.dogum && "Doğum",
-        parsed.medeni && "Medeni Durum",
-        parsed.adres && "Adres",
-        parsed.uzman_gozlemi && "Uzman Gözlemi",
-      ].filter(Boolean);
-      durumEl.textContent = "✅ Form otomatik dolduruldu!\nDoldurulan alanlar: " + doldurulan.join(", ") + "\n\nEksik alanları manuel tamamlayıp kaydedin.";
-      uygulaRow.style.display = "none";
-      mesaj("✅ Fotoğraftan form dolduruldu!");
-
-    } else {
-      // Sadece gözlem metni
-      aiRaporMetni = rawText;
-      durumEl.style.background = "#f8f9fc";
-      durumEl.style.border = "1.5px solid var(--border)";
-      durumEl.style.color = "var(--text)";
-      durumEl.textContent = rawText;
-      uygulaRow.style.display = "block";
+    } catch (remoteErr) {
+      console.warn("Çevrim içi AI kullanılamadı, yerel fallback devrede:", remoteErr);
     }
 
+    aiRaporMetni = yerelRaporMetniOlustur(f);
+    durumEl.style.background = "#fff7e6";
+    durumEl.style.border = "1.5px solid #f3d08a";
+    durumEl.style.color = "#8a5b00";
+    durumEl.textContent = fotoFile
+      ? "⚠️ Tarayıcıdan doğrudan AI servisine erişim engellendiği için fotoğraftan otomatik okuma yapılamadı. Mevcut form verilerinden yerel rapor oluşturuldu:
+
+" + aiRaporMetni
+      : "⚠️ AI servisine erişilemedi. Mevcut form verilerinden yerel rapor oluşturuldu:
+
+" + aiRaporMetni;
+    uygulaRow.style.display = "block";
   } catch(err) {
     durumEl.style.background = "#fef2f2";
     durumEl.style.border = "1.5px solid #fca5a5";
@@ -1604,6 +1648,7 @@ ${baglamMetni}`
     btn.textContent = "🤖 Fotoğraftan Formu Doldur / Rapor Yaz";
   }
 }
+
 
 function aiRaporUygula() {
   if (!aiRaporMetni) return;

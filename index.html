@@ -7,6 +7,42 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
+<script>
+window.__ocrReady = false;
+window.__ocrLoadingPromise = null;
+async function ensureOCRLoaded() {
+  if (window.Tesseract) { window.__ocrReady = true; return window.Tesseract; }
+  if (window.__ocrLoadingPromise) return window.__ocrLoadingPromise;
+  const kaynaklar = [
+    "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js",
+    "https://unpkg.com/tesseract.js@5/dist/tesseract.min.js"
+  ];
+  window.__ocrLoadingPromise = new Promise(async (resolve, reject) => {
+    for (const src of kaynaklar) {
+      try {
+        await new Promise((ok, no) => {
+          const eski = document.querySelector('script[data-ocr-src="' + src + '"]');
+          if (eski && window.Tesseract) return ok();
+          const s = document.createElement('script');
+          s.src = src;
+          s.async = true;
+          s.defer = true;
+          s.dataset.ocrSrc = src;
+          s.onload = ok;
+          s.onerror = no;
+          document.head.appendChild(s);
+        });
+        if (window.Tesseract) {
+          window.__ocrReady = true;
+          return resolve(window.Tesseract);
+        }
+      } catch (e) {}
+    }
+    reject(new Error('OCR bileşeni yüklenemedi. Sayfa internet üzerinden açılmalı ve CDN erişimi engellenmemelidir.'));
+  });
+  return window.__ocrLoadingPromise;
+}
+</script>
 <style>
 :root {
   --navy: #1a2744;
@@ -893,9 +929,7 @@ async function gorseldenMetinOku(file) {
   if (!file.type.startsWith("image/")) {
     throw new Error("Şu anda otomatik okuma için fotoğraf yükleyin. PDF otomatik okuma bu sürümde desteklenmiyor.");
   }
-  if (typeof Tesseract === "undefined") {
-    throw new Error("OCR bileşeni yüklenemedi. İnternet bağlantısını kontrol edin.");
-  }
+  const OCR = await ensureOCRLoaded();
 
   const durumEl = document.getElementById("ai-rapor-durum");
   const canvas = document.createElement("canvas");
@@ -917,13 +951,13 @@ async function gorseldenMetinOku(file) {
   const d = imageData.data;
   for (let i = 0; i < d.length; i += 4) {
     const gray = Math.round((d[i] * 0.299) + (d[i + 1] * 0.587) + (d[i + 2] * 0.114));
-    const boosted = gray > 175 ? 255 : gray < 90 ? 0 : gray;
+    const boosted = gray > 165 ? 255 : gray < 120 ? 0 : Math.min(255, Math.round(gray * 1.08));
     d[i] = d[i + 1] = d[i + 2] = boosted;
   }
   ctx.putImageData(imageData, 0, 0);
 
   try {
-    const result = await Tesseract.recognize(canvas.toDataURL("image/png"), "tur+eng", {
+    const result = await OCR.recognize(canvas.toDataURL("image/png"), "tur+eng", {
       logger: (m) => {
         if (durumEl && m.status) {
           const yuzde = typeof m.progress === "number" ? Math.round(m.progress * 100) : 0;
@@ -1047,12 +1081,17 @@ function parseEMasaBelgesi(rawText) {
   parsed.ad_soyad = labelSonrasi(nameLine, "AD, SOYAD / ÜNVAN")
     || labelSonrasi(nameLine, "AD, SOYAD/ ÜNVAN")
     || labelSonrasi(nameLine, "AD SOYAD / ÜNVAN")
+    || ilkEslesme(joined, /AD,?\s*SOYAD\s*\/\s*ÜNVAN[^A-ZÇĞİÖŞÜ]{0,20}([A-ZÇĞİÖŞÜ][A-ZÇĞİÖŞÜ\s]{4,})/i)
     || buyukHarfliAdSatiriBul(lines);
+  if (parsed.ad_soyad) parsed.ad_soyad = parsed.ad_soyad.replace(/\s{2,}/g, ' ').trim();
 
-  parsed.tc = ilkEslesme(joined, /TC[^0-9]{0,20}(\d{11})/i);
+  parsed.tc = ilkEslesme(joined, /TC[^0-9]{0,30}(\d{11})/i)
+    || ilkEslesme(joined, /TC\s*Kimlik[^0-9]{0,30}(\d{11})/i)
+    || ilkEslesme(joined, /Kimlik\/Vergi\s*No[^0-9]{0,30}(\d{11})/i);
   parsed.telefon = normalizeTelefon(
-    ilkEslesme(joined, /GSM[^0-9]{0,15}([0-9\s]{10,13})/i) ||
-    ilkEslesme(joined, /TELEFON[^0-9]{0,15}([0-9\s]{10,13})/i)
+    ilkEslesme(joined, /GSM[^0-9]{0,20}([0-9\s]{10,13})/i) ||
+    ilkEslesme(joined, /TELEFON[^0-9]{0,20}([0-9\s]{10,13})/i) ||
+    ilkEslesme(joined, /0?5\d{9,10}/i)
   );
   parsed.dogum = trDateToInput(
     ilkEslesme(joined, /D\.?\s*TAR[İI]H[İI][^0-9]{0,15}(\d{2}[./-]\d{2}[./-]\d{4})/i) ||
@@ -1069,6 +1108,9 @@ function parseEMasaBelgesi(rawText) {
   }
 
   if (/kirada|kira/.test(lower)) parsed.konut_durum = "kira";
+  if (!parsed.ilce && /kuşadası|kusadasi/i.test(joined)) parsed.ilce = "KUŞADASI";
+  if (!parsed.mahalle && /davutlar/i.test(joined)) parsed.mahalle = "DAVUTLAR";
+  if (!parsed.adres && (parsed.mahalle || parsed.ilce)) parsed.adres = [parsed.mahalle, parsed.ilce].filter(Boolean).join(" / ");
   if (/20\.?000|20000/.test(lower)) parsed.kira_miktar = "20000";
   if (/fatura borcu yok|borcu yok/.test(lower)) parsed.fatura_borc = "Yok";
 

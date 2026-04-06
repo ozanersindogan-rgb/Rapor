@@ -1711,5 +1711,83 @@ window.secilenWordIndir = secilenWordIndir;
 window.aiRaporOlustur = aiRaporOlustur;
 window.aiRaporUygula = aiRaporUygula;
 </script>
+
+<script>
+let ocrTamam = false;
+
+// Kaydet butonu bul (varsayılan: primary buton)
+const btnKaydet = document.querySelector(".btn-primary");
+if (btnKaydet) btnKaydet.disabled = true;
+
+// OCR başlarken (foto yükleme inputu varsayılan)
+const fotoInput = document.querySelector('input[type="file"]');
+if (fotoInput){
+  fotoInput.addEventListener("change", ()=>{
+    ocrTamam = false;
+    if (btnKaydet) btnKaydet.disabled = true;
+  });
+}
+
+// OCR bittikten sonra çağırılacak fonksiyon
+window.ocrBitti = function(){
+  document.querySelectorAll("input, textarea, select").forEach(el => {
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+    el.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+  ocrTamam = true;
+  if (btnKaydet) btnKaydet.disabled = false;
+};
+
+// form kontrol
+const form = document.querySelector("form");
+if (form){
+  form.addEventListener("submit", function(e){
+    if (!ocrTamam){
+      e.preventDefault();
+      alert("📄 Fotoğraf okunuyor, lütfen bekleyin...");
+    }
+  });
+}
+</script>
+
+
+<script>
+// AKILLI OCR EŞLEŞTİRME
+function temizle(text){
+  return text
+    .replace(/\s+/g,' ')
+    .replace(/O/g,'0')
+    .replace(/I/g,'1')
+    .trim();
+}
+
+function bul(regex, text){
+  const m = text.match(regex);
+  return m ? m[1] : "";
+}
+
+window.akilliDoldur = function(rawText){
+  const t = temizle(rawText);
+
+  const ad = bul(/Adı Soyadı[:\s]+([A-ZÇĞİÖŞÜ\s]+)/i, t);
+  const tc = bul(/(\d{11})/, t);
+  const dt = bul(/(\d{2}[\.\/\-]\d{2}[\.\/\-]\d{4})/, t);
+  const tel = bul(/(5\d{9})/, t);
+  const mahalle = bul(/Mahalle[:\s]+([A-ZÇĞİÖŞÜ\s]+)/i, t);
+
+  if(ad) document.querySelector('input[name="ad"]')?.value = ad;
+  if(tc) document.querySelector('input[name="tc"]')?.value = tc;
+  if(dt) document.querySelector('input[name="dogum"]')?.value = dt;
+  if(tel) document.querySelector('input[name="telefon"]')?.value = tel;
+  if(mahalle) document.querySelector('input[name="adres"]')?.value = mahalle;
+
+  // trigger validation
+  document.querySelectorAll("input, textarea, select").forEach(el => {
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+    el.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+};
+</script>
+
 </body>
 </html>

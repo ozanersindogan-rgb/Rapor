@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
-<title>SİR – Kuşadası Belediyesiozan </title>
+<title>SİR – Kuşadası Belediyesi</title>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
@@ -1521,9 +1521,7 @@ ${baglamMetni}`
         durumEl.style.background = "#fff7e6";
         durumEl.style.border = "1.5px solid #f3d08a";
         durumEl.style.color = "#8a5b00";
-        durumEl.textContent = "⚠️ Form otomatik doldurulamadı, metin olarak gösteriliyor:
-
-" + rawText;
+        durumEl.textContent = "⚠️ Form otomatik doldurulamadı, metin olarak gösteriliyor:\n\n" + rawText;
         uygulaRow.style.display = "block";
         return;
       }
@@ -1581,9 +1579,7 @@ ${baglamMetni}`
         parsed.adres && "Adres",
         parsed.uzman_gozlemi && "Uzman Gözlemi",
       ].filter(Boolean);
-      durumEl.textContent = "✅ Form otomatik dolduruldu!
-Doldurulan alanlar: " + doldurulan.join(", ") +
-        "\n\nEksik alanları manuel tamamlayıp kaydedin.";
+      durumEl.textContent = "✅ Form otomatik dolduruldu!\nDoldurulan alanlar: " + doldurulan.join(", ") + "\n\nEksik alanları manuel tamamlayıp kaydedin.";
       uygulaRow.style.display = "none";
       mesaj("✅ Fotoğraftan form dolduruldu!");
 

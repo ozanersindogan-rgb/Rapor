@@ -1789,5 +1789,40 @@ window.akilliDoldur = function(rawText){
 };
 </script>
 
+
+<script>
+// === FINAL FIXED MATCHING ===
+function setVal(selectors, value){
+  if(!value) return;
+  selectors.forEach(sel=>{
+    const el = document.querySelector(sel);
+    if(el){
+      el.value = value;
+    }
+  });
+}
+
+window.akilliDoldur = function(rawText){
+  const t = rawText.replace(/\s+/g,' ');
+
+  const ad = (t.match(/AD[,\.\s]*SOYAD[:\s]+([A-ZÇĞİÖŞÜ\s]+)/i)||[])[1];
+  const tc = (t.match(/\b\d{11}\b/)||[])[0];
+  const dt = (t.match(/\d{2}[\/\.\-]\d{2}[\/\.\-]\d{4}/)||[])[0];
+  const tel = (t.match(/5\d{9}/)||[])[0];
+  const mahalle = (t.match(/MAH.*?:?\s*([A-ZÇĞİÖŞÜ\s]+)/i)||[])[1];
+
+  setVal(['input[name="adSoyad"]','#adSoyad','#ad'], ad);
+  setVal(['input[name="tcKimlik"]','#tc','#tcKimlik'], tc);
+  setVal(['input[name="dogumTarihi"]','#dogum'], dt);
+  setVal(['input[name="gsm"]','#telefon','#gsm'], tel);
+  setVal(['input[name="mahalle"]','input[name="adres"]'], mahalle);
+
+  document.querySelectorAll("input, textarea").forEach(el=>{
+    el.dispatchEvent(new Event("input",{bubbles:true}));
+    el.dispatchEvent(new Event("change",{bubbles:true}));
+  });
+};
+</script>
+
 </body>
 </html>

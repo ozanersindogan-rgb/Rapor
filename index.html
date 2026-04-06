@@ -245,12 +245,12 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; b
     <div style="padding:20px 16px 24px;">
       <p style="color:rgba(255,255,255,.6);font-size:12px;letter-spacing:1px;text-transform:uppercase;text-align:center;margin-bottom:16px;">Kullanıcı Seçin</p>
       <div style="display:flex;flex-direction:column;gap:10px;">
-  <button class="kullanici-btn" data-isim="Ozan Ersin DOĞAN" id="kb-ozan">
+        <button class="kullanici-btn" onclick="kullanicisecim('Ozan Ersin DOĞAN')">
           <span class="kb-avatar">OE</span>
           <span class="kb-isim">Ozan Ersin DOĞAN</span>
           <span class="kb-unvan">Sosyal Hizmet Uzmanı</span>
         </button>
-  <button class="kullanici-btn" data-isim="Aybüke" id="kb-aybuke">
+        <button class="kullanici-btn" onclick="kullanicisecim('Aybüke')">
           <span class="kb-avatar">AY</span>
           <span class="kb-isim">Aybüke</span>
           <span class="kb-unvan">Sosyal Hizmet Uzmanı</span>
@@ -1351,6 +1351,15 @@ function secilenWordIndir() {
   });
 }
 
+// ── GİRİŞ BUTONU LISTENER'LARI ──
+document.addEventListener("DOMContentLoaded", function() {
+  document.querySelectorAll(".kullanici-btn").forEach(function(btn) {
+    btn.addEventListener("click", function() {
+      kullanicisecim(this.getAttribute("data-isim"));
+    });
+  });
+});
+
 // ── ÇIKIŞ ──
 function cikisYap() {
   try { localStorage.removeItem("sir_kullanici"); } catch(e) {}
@@ -1657,11 +1666,6 @@ window.wordIndirById = wordIndirById;
 window.secilenWordIndir = secilenWordIndir;
 window.aiRaporOlustur = aiRaporOlustur;
 window.aiRaporUygula = aiRaporUygula;
-document.querySelectorAll(".kullanici-btn").forEach(function(btn) {
-  btn.addEventListener("click", function() {
-    kullanicisecim(this.getAttribute("data-isim"));
-  });
-});
 </script>
 </body>
 </html>

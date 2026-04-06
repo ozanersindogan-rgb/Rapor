@@ -876,6 +876,21 @@ function toggleVar(tip, deger) {
 }
 
 // ── FOTOĞRAF YÜKLEME ──
+// ── DOSYA TÜRÜ YARDIMCILARI ──
+function isImageFile(file) {
+  if (!file) return false;
+  const type = (file.type || "").toLowerCase();
+  const name = (file.name || "").toLowerCase();
+  return type.startsWith("image/") || /\.(jpg|jpeg|png|webp|bmp|gif|jfif)$/i.test(name);
+}
+
+function isPdfFile(file) {
+  if (!file) return false;
+  const type = (file.type || "").toLowerCase();
+  const name = (file.name || "").toLowerCase();
+  return type === "application/pdf" || /\.pdf$/i.test(name);
+}
+
 async function fotoSec() {
   const file = document.getElementById("foto-input").files?.[0];
   if (!file) return;
@@ -885,7 +900,7 @@ async function fotoSec() {
 
   durum.className = "foto-durum yukleniyor";
   durum.style.display = "block";
-  durum.textContent = "⏳ Yükleniyor…";
+  durum.textContent = isImageFile(file) ? "⏳ Fotoğraf hazırlanıyor…" : "⏳ Dosya hazırlanıyor…";
   document.getElementById("foto-yazi").textContent = "📎 " + file.name;
   document.getElementById("foto-ikon").textContent = "";
 
@@ -893,7 +908,7 @@ async function fotoSec() {
   reader.onload = async function(e) {
     const dataUrl = e.target.result;
     // Önizleme (fotoğraflar için)
-    if (file.type.startsWith("image/")) {
+    if (isImageFile(file)) {
       preview.src = dataUrl;
       preview.style.display = "block";
     }
@@ -927,8 +942,8 @@ async function fotoSec() {
 
 async function gorseldenMetinOku(file) {
   if (!file) return "";
-  if (!file.type.startsWith("image/")) {
-    throw new Error("Şu anda otomatik okuma için fotoğraf yükleyin. PDF otomatik okuma bu sürümde desteklenmiyor.");
+  if (!isImageFile(file)) {
+    throw new Error("Bu dosya fotoğraf olarak algılanmadı. JPG, JPEG veya PNG yükleyin.");
   }
   const OCR = await ensureOCRLoaded();
 
@@ -1185,8 +1200,8 @@ async function pdfdenMetinOku(file) {
 
 async function dosyadanMetinOku(file) {
   if (!file) return '';
-  if (file.type.startsWith('image/')) return await gorseldenMetinOku(file);
-  if (file.type === 'application/pdf' || /\.pdf$/i.test(file.name || '')) return await pdfdenMetinOku(file);
+  if (isImageFile(file)) return await gorseldenMetinOku(file);
+  if (isPdfFile(file)) return await pdfdenMetinOku(file);
   throw new Error('Sadece fotoğraf veya PDF yükleyin.');
 }
 

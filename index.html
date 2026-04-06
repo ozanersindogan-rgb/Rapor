@@ -587,6 +587,11 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; b
 <div class="mesaj-bar" id="mesaj-bar"></div>
 
 <script>
+// ── ANTHROPIC PROXY ──
+// Google Apps Script deploy URL'sini buraya yapıştır:
+const ANTHROPIC_PROXY = "PROXY_URL_BURAYA";
+// Nasıl kurulur: https://script.google.com → Yeni Proje → aşağıdaki kodu yapıştır → Dağıt → Web Uygulaması
+
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyB9tYLbLRiY9HEfJQLQcyI5aij6wY2Qw_E",
   authDomain: "rapor-1192a.firebaseapp.com",
@@ -1477,15 +1482,21 @@ ${baglamMetni}`
       });
     }
 
-    const resp = await fetch("https://api.anthropic.com/v1/messages", {
+    const resp = await fetch(ANTHROPIC_PROXY, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
+        model: "claude-sonnet-4-5",
         max_tokens: 1500,
         messages
       })
     });
+
+    if (!resp.ok) {
+      let errMsg = "HTTP " + resp.status;
+      try { const e = await resp.json(); errMsg = e.error?.message || errMsg; } catch(e) {}
+      throw new Error(errMsg);
+    }
 
     const data = await resp.json();
     if (data.error) throw new Error(data.error.message);

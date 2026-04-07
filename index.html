@@ -315,6 +315,23 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; b
         <h2>Kişi Bilgisi</h2>
       </div>
       <div class="card-body">
+        <!-- DİLEKÇE FOTOĞRAFI YÜKLEME -->
+        <div class="field">
+          <label>Dilekçe Fotoğrafı Yükleme Alanı</label>
+          <div class="foto-zone" id="foto-zone" onclick="document.getElementById('foto-input').click()">
+            <div class="foto-zone-ikon" id="foto-ikon">📎</div>
+            <p id="foto-yazi">Dilekçe fotoğrafı veya PDF seçmek için dokunun</p>
+            <small>JPG, PNG veya PDF</small>
+          </div>
+          <input type="file" id="foto-input" accept="image/*,application/pdf" style="display:none" onchange="fotoSec()"/>
+          <img id="foto-preview" class="foto-preview" alt="Önizleme"/>
+          <div class="foto-durum" id="foto-durum"></div>
+          <div class="field" style="margin-top:8px;">
+            <label>Belge Linki</label>
+            <input id="dosya_link" type="url" placeholder="Yükleme sonrası otomatik dolar" readonly/>
+          </div>
+        </div>
+
         <div class="field">
           <label>Adı Soyadı *</label>
           <input id="ad_soyad" type="text" placeholder="Ad Soyad"/>
@@ -543,22 +560,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; b
           </div>
         </div>
 
-        <!-- FOTOĞRAF & PDF YÜKLEME -->
-        <div class="field">
-          <label>Belge / Fotoğraf Yükleme</label>
-          <div class="foto-zone" id="foto-zone" onclick="document.getElementById('foto-input').click()">
-            <div class="foto-zone-ikon" id="foto-ikon">📎</div>
-            <p id="foto-yazi">Fotoğraf veya PDF seçmek için dokunun</p>
-            <small>JPG, PNG veya PDF</small>
-          </div>
-          <input type="file" id="foto-input" accept="image/*,application/pdf" style="display:none" onchange="fotoSec()"/>
-          <img id="foto-preview" class="foto-preview" alt="Önizleme"/>
-          <div class="foto-durum" id="foto-durum"></div>
-          <div class="field" style="margin-top:8px;">
-            <label>Belge Linki</label>
-            <input id="dosya_link" type="url" placeholder="Yükleme sonrası otomatik dolar" readonly/>
-          </div>
-        </div>
 
         <!-- AI RAPOR OLUŞTUR -->
         <div style="margin-top:4px;">
@@ -1035,7 +1036,7 @@ function setForm(f) {
   fotoBlob = null; fotoImgbbLink = "";
   document.getElementById("foto-preview").style.display = "none";
   document.getElementById("foto-durum").style.display = "none";
-  document.getElementById("foto-yazi").textContent = "Fotoğraf veya PDF seçmek için dokunun";
+  document.getElementById("foto-yazi").textContent = "Dilekçe fotoğrafı veya PDF seçmek için dokunun";
   document.getElementById("foto-ikon").textContent = "📎";
 }
 

@@ -607,8 +607,8 @@ const db  = firebase.firestore();
 const col = db.collection("raporlar");
 
 const KULLANICILAR = {
-  ozan:   { id: "ozan",   ad: "OZAN",   pin: "ozan1234" },
-  aybuke: { id: "aybuke", ad: "AYBÜKE", pin: "ay1234" }
+  ozan:   { id: "ozan",   ad: "OZAN",   pin: "1111" },
+  aybuke: { id: "aybuke", ad: "AYBÜKE", pin: "2222" }
 };
 
 function kullaniciBulByPin(pin) {
@@ -673,10 +673,22 @@ function _pinKontrol() {
   }
 }
 function kullanicisecim(isim) {
-  const normalized = String(isim || "").toLocaleLowerCase("tr-TR");
-  const kullanici = Object.values(KULLANICILAR).find(k => k.ad.toLocaleLowerCase("tr-TR") === normalized || k.id === normalized);
+  const normalized = String(isim || "").toLocaleLowerCase("tr-TR").trim();
+  const kullanici = Object.values(KULLANICILAR).find(k => {
+    const adNorm = k.ad.toLocaleLowerCase("tr-TR");
+    const idNorm = k.id.toLocaleLowerCase("tr-TR");
+    return (
+      adNorm === normalized ||
+      idNorm === normalized ||
+      normalized.includes(adNorm) ||
+      adNorm.includes(normalized) ||
+      normalized.includes(idNorm)
+    );
+  });
   if (kullanici) {
     girisTamamla(kullanici);
+  } else {
+    document.getElementById("pin-hata").textContent = "Kullanıcı eşleşmedi";
   }
 }
 

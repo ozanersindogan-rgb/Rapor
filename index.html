@@ -1378,7 +1378,7 @@ async function claudeVisionOku(file, durumEl) {
   const mediaType = file.type || "image/jpeg";
 
   // Cloudflare Worker proxy URL — worker kurulumundan sonra buraya yaz
-  const PROXY_URL = "https://sir-proxy.KULLANICI_ADIN.workers.dev";
+  const PROXY_URL = "https://sir-proxy.ozanersindogan.workers.dev";
 
   const response = await fetch(PROXY_URL, {
     method: "POST",

@@ -7,6 +7,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <style>
 :root {
   --navy: #1a2744;
@@ -865,7 +866,31 @@ function toggleVar(tip, deger) {
 let fotoBase64 = "";
 let fotoMimeType = "";
 
-function fotoSec() {
+if (window.pdfjsLib) {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+}
+
+async function pdfIlkSayfaDataUrlOlustur(file, scale = 2) {
+  if (!window.pdfjsLib) throw new Error("PDF okuma bileşeni yüklenemedi");
+  const bytes = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
+  const page = await pdf.getPage(1);
+  const viewport = page.getViewport({ scale });
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d", { alpha: false });
+  canvas.width = Math.ceil(viewport.width);
+  canvas.height = Math.ceil(viewport.height);
+  await page.render({ canvasContext: ctx, viewport }).promise;
+  return canvas.toDataURL("image/jpeg", 0.92);
+}
+
+async function pdfIlkSayfaImageFileOlustur(file, scale = 2) {
+  const dataUrl = await pdfIlkSayfaDataUrlOlustur(file, scale);
+  const blob = await (await fetch(dataUrl)).blob();
+  return new File([blob], (file.name || "belge").replace(/\.pdf$/i, "") + "_sayfa1.jpg", { type: "image/jpeg" });
+}
+
+async function fotoSec() {
   const file = document.getElementById("foto-input").files?.[0];
   if (!file) return;
   const durum   = document.getElementById("foto-durum");
@@ -878,28 +903,49 @@ function fotoSec() {
   document.getElementById("foto-yazi").textContent = "📎 " + file.name;
   document.getElementById("foto-ikon").textContent = "";
 
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    const dataUrl = e.target.result;
-    fotoBase64    = dataUrl.split(",")[1];
-    fotoMimeType  = file.type || "image/jpeg";
-    fotoBlob      = file;
-    fotoImgbbLink = "";
-    linkEl.value  = "(Yerel dosya: " + file.name + ")";
-    if (file.type.startsWith("image/")) {
+  try {
+    if (file.type === "application/pdf") {
+      durum.textContent = "⏳ PDF görsele çevriliyor…";
+      const dataUrl = await pdfIlkSayfaDataUrlOlustur(file);
+      fotoBase64 = dataUrl.split(",")[1];
+      fotoMimeType = "image/jpeg";
+      fotoBlob = file;
+      fotoImgbbLink = "";
+      linkEl.value = "(Yerel dosya: " + file.name + ")";
       preview.src = dataUrl;
       preview.style.display = "block";
-    } else {
-      preview.style.display = "none";
+      durum.className = "foto-durum basarili";
+      durum.textContent = "✅ PDF hazır: ilk sayfa görsele çevrildi. AI ile analiz edebilirsiniz.";
+      return;
     }
-    durum.className = "foto-durum basarili";
-    durum.textContent = "✅ Hazır: " + file.name + " (" + (file.size/1024).toFixed(0) + " KB) — AI ile analiz edebilirsiniz.";
-  };
-  reader.onerror = function() {
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const dataUrl = e.target.result;
+      fotoBase64    = dataUrl.split(",")[1];
+      fotoMimeType  = file.type || "image/jpeg";
+      fotoBlob      = file;
+      fotoImgbbLink = "";
+      linkEl.value  = "(Yerel dosya: " + file.name + ")";
+      if (file.type.startsWith("image/")) {
+        preview.src = dataUrl;
+        preview.style.display = "block";
+      } else {
+        preview.style.display = "none";
+      }
+      durum.className = "foto-durum basarili";
+      durum.textContent = "✅ Hazır: " + file.name + " (" + (file.size/1024).toFixed(0) + " KB) — AI ile analiz edebilirsiniz.";
+    };
+    reader.onerror = function() {
+      durum.className = "foto-durum hata";
+      durum.textContent = "⚠️ Dosya okunamadı, tekrar deneyin.";
+    };
+    reader.readAsDataURL(file);
+  } catch (err) {
+    preview.style.display = "none";
     durum.className = "foto-durum hata";
-    durum.textContent = "⚠️ Dosya okunamadı, tekrar deneyin.";
-  };
-  reader.readAsDataURL(file);
+    durum.textContent = "⚠️ " + (err?.message || "PDF işlenemedi");
+  }
 }
 
 // ── FORM GET/SET ──
@@ -1911,7 +1957,7 @@ async function aiRaporOlustur() {
   const fotoFile = fotoInput?.files?.[0];
 
   btn.disabled = true;
-  btn.textContent = "⏳ Fotoğraf okunuyor…";
+  btn.textContent = "⏳ Belge okunuyor…";
   durumEl.style.display = "block";
   durumEl.style.background = "#f0f4ff";
   durumEl.style.border = "1.5px solid #c7d2fe";
@@ -1920,14 +1966,19 @@ async function aiRaporOlustur() {
 
   try {
     if (!fotoFile) {
-      throw new Error("Önce fotoğraf yükleyin");
+      throw new Error("Önce belge yükleyin");
     }
-    if (!String(fotoFile.type || "").startsWith("image/")) {
-      throw new Error("Bu özellik şimdilik sadece fotoğraflarda çalışır");
+    let analizFile = fotoFile;
+    const mimeType = String(fotoFile.type || "").toLowerCase();
+    if (mimeType === "application/pdf") {
+      durumEl.textContent = "📄 PDF ilk sayfası görsele çevriliyor…";
+      analizFile = await pdfIlkSayfaImageFileOlustur(fotoFile);
+    } else if (!mimeType.startsWith("image/")) {
+      throw new Error("Sadece fotoğraf veya PDF yükleyebilirsiniz");
     }
 
     durumEl.textContent = "🤖 Claude ile belge okunuyor, kişi bilgileri dolduruluyor…";
-    const parsed = await claudeVisionOku(fotoFile, durumEl);
+    const parsed = await claudeVisionOku(analizFile, durumEl);
 
     const doldurulan = [];
     if (setInputValue("ad_soyad", parsed.ad_soyad)) doldurulan.push("Ad Soyad");

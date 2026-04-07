@@ -900,6 +900,31 @@ let fotoMimeType = "";
 let aiAnalizFile = null;
 let pdfJpgList = [];
 
+
+function dataURLToFile(dataUrl, filename) {
+  const parts = String(dataUrl || "").split(",");
+  if (parts.length < 2) throw new Error("Görsel verisi hazırlanamadı");
+  const mimeMatch = parts[0].match(/data:(.*?);base64/);
+  const mime = mimeMatch ? mimeMatch[1] : "image/jpeg";
+  const binary = atob(parts[1]);
+  const len = binary.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++) bytes[i] = binary.charCodeAt(i);
+  return new File([bytes], filename || "belge.jpg", { type: mime });
+}
+
+function analizDosyasiHazirla(dataUrl, filename) {
+  try {
+    aiAnalizFile = dataURLToFile(dataUrl, filename);
+    return aiAnalizFile;
+  } catch (e) {
+    console.error("Analiz dosyası hazırlanamadı:", e);
+    aiAnalizFile = null;
+    return null;
+  }
+}
+
+
 async function pdfSec() {
   const file = document.getElementById("pdf-input")?.files?.[0];
   if (!file) return;
@@ -952,6 +977,7 @@ async function pdfSec() {
       const first = pdfJpgList[0].dataUrl;
       fotoBase64 = first.split(",")[1];
       fotoMimeType = "image/jpeg";
+      analizDosyasiHazirla(first, file.name.replace(/\.pdf$/i, "") + "-sayfa1.jpg");
       document.getElementById("foto-preview").src = first;
       document.getElementById("foto-preview").style.display = "block";
       document.getElementById("foto-yazi").textContent = `📎 ${file.name} (1. sayfa hazır)`;
@@ -994,7 +1020,7 @@ function fotoSec() {
     if (typeof pdfjsLib === "undefined") {
       aiAnalizFile = null;
       durum.className = "foto-durum hata";
-      durum.textContent = "⚠️ PDF modülü yüklenemedi.";
+      durum.textContent = "⚠️ PDF modülü yüklenemedi. Fotoğraf yükleyebilir veya sayfayı yenileyip tekrar deneyebilirsiniz.";
       preview.style.display = "none";
       return;
     }
@@ -2072,7 +2098,15 @@ async function aiRaporOlustur() {
   const uygulaRow = document.getElementById("ai-rapor-uygula-row");
   const fotoInput = document.getElementById("foto-input");
   const secilenDosya = fotoInput?.files?.[0] || null;
-  const fotoFile = aiAnalizFile || (String(secilenDosya?.type || "").startsWith("image/") ? secilenDosya : null);
+  const previewSrc = document.getElementById("foto-preview")?.src || "";
+  let fotoFile = aiAnalizFile || (String(secilenDosya?.type || "").startsWith("image/") ? secilenDosya : null);
+
+  if (!fotoFile && fotoBase64 && String(fotoMimeType || "").startsWith("image/")) {
+    fotoFile = analizDosyasiHazirla(`data:${fotoMimeType};base64,${fotoBase64}`, "belge-analiz.jpg");
+  }
+  if (!fotoFile && previewSrc.startsWith("data:image/")) {
+    fotoFile = analizDosyasiHazirla(previewSrc, "belge-analiz.jpg");
+  }
 
   btn.disabled = true;
   btn.textContent = "⏳ Belge okunuyor…";

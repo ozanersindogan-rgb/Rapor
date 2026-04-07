@@ -7,6 +7,14 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+window.addEventListener("load", function () {
+  if (typeof pdfjsLib !== "undefined") {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+  }
+});
+</script>
 <style>
 :root {
   --navy: #1a2744;
@@ -140,6 +148,16 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; b
 .foto-durum.yukleniyor { background: #fff7e6; border: 1.5px solid #f3d08a; color: #8a5b00; }
 .foto-durum.basarili { background: #ecfdf5; border: 1.5px solid #6ee7b7; color: #065f46; }
 .foto-durum.hata { background: #fef2f2; border: 1.5px solid #fca5a5; color: #991b1b; }
+
+/* ── PDF -> JPG MODÜLÜ ── */
+.pdf-tools {
+  border: 1.5px solid var(--border); border-radius: 12px;
+  padding: 12px; background: #fbfcff;
+}
+.pdf-thumb-list { display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; margin-top: 10px; }
+.pdf-thumb-item { border: 1px solid var(--border); border-radius: 10px; padding: 8px; background: #fff; }
+.pdf-thumb-item img { width: 100%; border-radius: 8px; display: block; }
+.pdf-thumb-item small { display: block; margin-top: 6px; color: var(--muted); font-size: 11px; text-align: center; }
 
 /* ── BUTONLAR ── */
 .btn { border: none; border-radius: 10px; padding: 12px 20px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all .18s; display: inline-flex; align-items: center; gap: 7px; }
@@ -308,14 +326,27 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; b
   <!-- ══ FORM SAYFASI ══ -->
   <div id="page-form" class="page active">
 
-    <!-- DİLEKÇE YÜKLEME VE AI -->
+    <!-- KİŞİ BİLGİSİ -->
     <div class="card">
       <div class="card-head">
-        <span class="card-head-icon">📎</span>
-        <h2>Dilekçe Yükleme</h2>
+        <span class="card-head-icon">👤</span>
+        <h2>Kişi Bilgisi</h2>
       </div>
       <div class="card-body">
-        <!-- FOTOĞRAF & PDF YÜKLEME -->
+        <!-- PDF -> JPG ÇEVİRME -->
+        <div class="field">
+          <label>PDF'ten JPG'ye Çevirme Alanı</label>
+          <div class="pdf-tools">
+            <div class="btn-row">
+              <button type="button" class="btn btn-ghost btn-sm" onclick="document.getElementById('pdf-input').click()">📄 PDF Seç</button>
+            </div>
+            <input type="file" id="pdf-input" accept="application/pdf" style="display:none" onchange="pdfSec()"/>
+            <div class="foto-durum" id="pdf-durum" style="margin-top:10px;"></div>
+            <div id="pdf-thumb-list" class="pdf-thumb-list" style="display:none"></div>
+          </div>
+        </div>
+
+        <!-- DİLEKÇE FOTOĞRAFI YÜKLEME -->
         <div class="field">
           <label>Dilekçe Fotoğrafı Yükleme Alanı</label>
           <div class="foto-zone" id="foto-zone" onclick="document.getElementById('foto-input').click()">
@@ -327,7 +358,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; b
           <img id="foto-preview" class="foto-preview" alt="Önizleme"/>
           <div class="foto-durum" id="foto-durum"></div>
           <div class="field" style="margin-top:8px;">
-            <label>Dilekçe Linki</label>
+            <label>Belge Linki</label>
             <input id="dosya_link" type="url" placeholder="Yükleme sonrası otomatik dolar" readonly/>
           </div>
         </div>
@@ -346,16 +377,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; b
             <button class="btn btn-green btn-block" onclick="aiRaporUygula()">✅ Bu Metni Uzman Gözlemine Uygula</button>
           </div>
         </div>
-      </div>
-    </div>
 
-    <!-- KİŞİ BİLGİSİ -->
-    <div class="card">
-      <div class="card-head">
-        <span class="card-head-icon">👤</span>
-        <h2>Kişi Bilgisi</h2>
-      </div>
-      <div class="card-body">
         <div class="field">
           <label>Adı Soyadı *</label>
           <input id="ad_soyad" type="text" placeholder="Ad Soyad"/>
@@ -584,7 +606,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; b
           </div>
         </div>
 
-        </div>
+
       </div>
     </div>
 
@@ -875,6 +897,79 @@ function toggleVar(tip, deger) {
 // ── FOTOĞRAF YÜKLEME ──
 let fotoBase64 = "";
 let fotoMimeType = "";
+let aiAnalizFile = null;
+let pdfJpgList = [];
+
+async function pdfSec() {
+  const file = document.getElementById("pdf-input")?.files?.[0];
+  if (!file) return;
+
+  const durum = document.getElementById("pdf-durum");
+  const thumbList = document.getElementById("pdf-thumb-list");
+  if (!durum || !thumbList) return;
+
+  if (typeof pdfjsLib === "undefined") {
+    durum.className = "foto-durum hata";
+    durum.style.display = "block";
+    durum.textContent = "⚠️ PDF modülü yüklenemedi. İnternet veya CDN erişimini kontrol edin.";
+    return;
+  }
+
+  durum.className = "foto-durum yukleniyor";
+  durum.style.display = "block";
+  durum.textContent = "⏳ PDF sayfaları JPG'ye çevriliyor…";
+  thumbList.style.display = "none";
+  thumbList.innerHTML = "";
+  pdfJpgList = [];
+
+  try {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    const pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
+
+    for (let pageNo = 1; pageNo <= pdf.numPages; pageNo++) {
+      const page = await pdf.getPage(pageNo);
+      const viewport = page.getViewport({ scale: 1.5 });
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      await page.render({ canvasContext: ctx, viewport }).promise;
+      const jpgDataUrl = canvas.toDataURL("image/jpeg", 0.92);
+      pdfJpgList.push({ page: pageNo, dataUrl: jpgDataUrl });
+
+      const item = document.createElement("div");
+      item.className = "pdf-thumb-item";
+      item.innerHTML = `<img src="${jpgDataUrl}" alt="PDF sayfa ${pageNo}"><small>Sayfa ${pageNo}</small>`;
+      thumbList.appendChild(item);
+    }
+
+    thumbList.style.display = "grid";
+    durum.className = "foto-durum basarili";
+    durum.textContent = `✅ ${pdf.numPages} sayfa JPG'ye çevrildi.`;
+
+    if (pdfJpgList[0]) {
+      const first = pdfJpgList[0].dataUrl;
+      fotoBase64 = first.split(",")[1];
+      fotoMimeType = "image/jpeg";
+      document.getElementById("foto-preview").src = first;
+      document.getElementById("foto-preview").style.display = "block";
+      document.getElementById("foto-yazi").textContent = `📎 ${file.name} (1. sayfa hazır)`;
+      document.getElementById("foto-ikon").textContent = "";
+      document.getElementById("dosya_link").value = `(PDF çevrildi: ${file.name})`;
+      const fd = document.getElementById("foto-durum");
+      if (fd) {
+        fd.className = "foto-durum basarili";
+        fd.style.display = "block";
+        fd.textContent = `✅ PDF yüklendi. 1. sayfa JPG olarak hazır.`;
+      }
+    }
+  } catch (err) {
+    console.error(err);
+    durum.className = "foto-durum hata";
+    durum.textContent = "⚠️ PDF çevrilemedi. Dosyayı tekrar deneyin.";
+  }
+}
 
 function fotoSec() {
   const file = document.getElementById("foto-input").files?.[0];
@@ -889,11 +984,71 @@ function fotoSec() {
   document.getElementById("foto-yazi").textContent = "📎 " + file.name;
   document.getElementById("foto-ikon").textContent = "";
 
+  const okuyucuHatasi = function() {
+    aiAnalizFile = null;
+    durum.className = "foto-durum hata";
+    durum.textContent = "⚠️ Dosya okunamadı, tekrar deneyin.";
+  };
+
+  if (file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")) {
+    if (typeof pdfjsLib === "undefined") {
+      aiAnalizFile = null;
+      durum.className = "foto-durum hata";
+      durum.textContent = "⚠️ PDF modülü yüklenemedi.";
+      preview.style.display = "none";
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+      try {
+        const typedarray = new Uint8Array(e.target.result);
+        const pdf = await pdfjsLib.getDocument({ data: typedarray }).promise;
+        const page = await pdf.getPage(1);
+        const viewport = page.getViewport({ scale: 2 });
+
+        const canvas = document.createElement("canvas");
+        const context = canvas.getContext("2d");
+        canvas.width = Math.ceil(viewport.width);
+        canvas.height = Math.ceil(viewport.height);
+
+        await page.render({
+          canvasContext: context,
+          viewport: viewport
+        }).promise;
+
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
+        fotoBase64 = dataUrl.split(",")[1];
+        fotoMimeType = "image/jpeg";
+        fotoImgbbLink = "";
+        linkEl.value = "(PDF çevrildi: " + file.name + ")";
+        preview.src = dataUrl;
+        preview.style.display = "block";
+
+        const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.92));
+        aiAnalizFile = new File([blob], file.name.replace(/\.pdf$/i, "") + "-sayfa1.jpg", { type: "image/jpeg" });
+
+        durum.className = "foto-durum basarili";
+        durum.textContent = "✅ PDF yüklendi. 1. sayfa JPG olarak hazır.";
+      } catch (err) {
+        console.error(err);
+        aiAnalizFile = null;
+        preview.style.display = "none";
+        durum.className = "foto-durum hata";
+        durum.textContent = "⚠️ PDF okunamadı, tekrar deneyin.";
+      }
+    };
+    reader.onerror = okuyucuHatasi;
+    reader.readAsArrayBuffer(file);
+    return;
+  }
+
   const reader = new FileReader();
   reader.onload = function(e) {
     const dataUrl = e.target.result;
     fotoBase64    = dataUrl.split(",")[1];
     fotoMimeType  = file.type || "image/jpeg";
+    aiAnalizFile  = file;
     fotoBlob      = file;
     fotoImgbbLink = "";
     linkEl.value  = "(Yerel dosya: " + file.name + ")";
@@ -906,10 +1061,7 @@ function fotoSec() {
     durum.className = "foto-durum basarili";
     durum.textContent = "✅ Hazır: " + file.name + " (" + (file.size/1024).toFixed(0) + " KB) — AI ile analiz edebilirsiniz.";
   };
-  reader.onerror = function() {
-    durum.className = "foto-durum hata";
-    durum.textContent = "⚠️ Dosya okunamadı, tekrar deneyin.";
-  };
+  reader.onerror = okuyucuHatasi;
   reader.readAsDataURL(file);
 }
 
@@ -1046,7 +1198,7 @@ function setForm(f) {
   fotoBlob = null; fotoImgbbLink = "";
   document.getElementById("foto-preview").style.display = "none";
   document.getElementById("foto-durum").style.display = "none";
-  document.getElementById("foto-yazi").textContent = "Fotoğraf veya PDF seçmek için dokunun";
+  document.getElementById("foto-yazi").textContent = "Dilekçe fotoğrafı veya PDF seçmek için dokunun";
   document.getElementById("foto-ikon").textContent = "📎";
 }
 
@@ -1919,10 +2071,11 @@ async function aiRaporOlustur() {
   const durumEl = document.getElementById("ai-rapor-durum");
   const uygulaRow = document.getElementById("ai-rapor-uygula-row");
   const fotoInput = document.getElementById("foto-input");
-  const fotoFile = fotoInput?.files?.[0];
+  const secilenDosya = fotoInput?.files?.[0] || null;
+  const fotoFile = aiAnalizFile || (String(secilenDosya?.type || "").startsWith("image/") ? secilenDosya : null);
 
   btn.disabled = true;
-  btn.textContent = "⏳ Fotoğraf okunuyor…";
+  btn.textContent = "⏳ Belge okunuyor…";
   durumEl.style.display = "block";
   durumEl.style.background = "#f0f4ff";
   durumEl.style.border = "1.5px solid #c7d2fe";
@@ -1931,10 +2084,10 @@ async function aiRaporOlustur() {
 
   try {
     if (!fotoFile) {
-      throw new Error("Önce fotoğraf yükleyin");
+      throw new Error("Önce fotoğraf veya PDF yükleyin");
     }
     if (!String(fotoFile.type || "").startsWith("image/")) {
-      throw new Error("Bu özellik şimdilik sadece fotoğraflarda çalışır");
+      throw new Error("Belge görsele çevrilemedi");
     }
 
     durumEl.textContent = "🤖 Claude ile belge okunuyor, kişi bilgileri dolduruluyor…";

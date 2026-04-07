@@ -1406,92 +1406,128 @@ async function preprocessCanvas(canvas) {
   return c;
 }
 
-async function cropAreasFromFile(file) {
-  const img = await createImageBitmap(file);
-  const base = document.createElement("canvas");
-  const bctx = base.getContext("2d");
-  base.width = img.width;
-  base.height = img.height;
-  bctx.drawImage(img, 0, 0);
+// Sosyal yardım formu için tam sayfa OCR tabanlı parse
+async function parseKisiBilgileriByCrop(file) {
+  // Crop yerine tam sayfa OCR kullan — sosyal yardım formları farklı layout'larda gelir
+  if (!window.Tesseract) throw new Error("OCR bileşeni yüklenemedi");
+  const cleaned = await preprocessImage(file);
+  const result = await Tesseract.recognize(cleaned, "tur+eng", { logger: () => {} });
+  const rawText = result?.data?.text || "";
+  return parseSosyalYardimFormu(rawText);
+}
 
-  function crop(rx, ry, rw, rh) {
-    const x = Math.max(0, Math.floor(base.width * rx));
-    const y = Math.max(0, Math.floor(base.height * ry));
-    const w = Math.max(1, Math.floor(base.width * rw));
-    const h = Math.max(1, Math.floor(base.height * rh));
-    const c = document.createElement("canvas");
-    const ctx = c.getContext("2d");
-    c.width = w;
-    c.height = h;
-    ctx.drawImage(base, x, y, w, h, 0, 0, w, h);
-    return c;
+function parseSosyalYardimFormu(rawText) {
+  // Satırları normalize et
+  const lines = rawText
+    .replace(/\r/g, "")
+    .replace(/[|]/g, "I")
+    .replace(/\u00A0/g, " ")
+    .split("\n")
+    .map(l => l.replace(/[ \t]+/g, " ").trim())
+    .filter(Boolean);
+
+  const full = lines.join("\n");
+
+  // Etiket sonrasındaki değeri döndür (aynı satır veya bir sonraki satır)
+  function fieldAfter(labelPatterns) {
+    for (const pat of labelPatterns) {
+      const re = new RegExp(pat + "[:\\s]*([^\\n]{2,60})", "i");
+      const m = full.match(re);
+      if (m) {
+        const val = m[1].replace(/^[\s:;,\-]+/, "").trim();
+        if (val.length >= 2) return val;
+      }
+      // Etiket kendi satırında, değer bir sonraki satırda
+      for (let i = 0; i < lines.length; i++) {
+        if (new RegExp(pat, "i").test(lines[i])) {
+          // Önce aynı satırda etiketten sonraki kısım
+          const after = lines[i].replace(new RegExp(".*" + pat, "i"), "").replace(/^[\s:;,\-*]+/, "").trim();
+          if (after.length >= 2) return after;
+          // Sonraki satır
+          if (lines[i + 1] && !/^[\(\[*#]/.test(lines[i + 1])) return lines[i + 1].trim();
+        }
+      }
+    }
+    return "";
   }
 
-  return {
-    ad: crop(0.11, 0.235, 0.34, 0.045),
-    tc: crop(0.11, 0.315, 0.34, 0.045),
-    dogum: crop(0.52, 0.315, 0.18, 0.045),
-    tel: crop(0.11, 0.372, 0.34, 0.045),
-    ilce: crop(0.11, 0.435, 0.20, 0.042),
-    mahalle: crop(0.11, 0.472, 0.22, 0.042),
-  };
-}
-
-async function readAreaText(canvas, whitelist) {
-  const prepared = await preprocessCanvas(canvas);
-  const result = await Tesseract.recognize(prepared, "tur+eng", {
-    logger: () => {},
-    tessedit_char_whitelist: whitelist || undefined
-  });
-  return String(result?.data?.text || "").replace(/\s+/g, " ").trim();
-}
-
-function temizAd(v) {
-  return String(v || "")
+  // AD SOYAD
+  let adSoyad = fieldAfter([
+    "ADI\\s*SOYADI", "AD\\s*SOYADI", "ADI\\s*VE\\s*SOYADI",
+    "AD\\s*SOYAD", "BAŞVURANIN\\s*ADI\\s*SOYADI"
+  ]);
+  // Sadece harf bırak
+  adSoyad = adSoyad
     .replace(/[^A-ZÇĞİÖŞÜa-zçğıöşü\s]/g, " ")
     .replace(/\s+/g, " ")
     .trim()
     .toLocaleUpperCase("tr-TR");
-}
 
-function temizTelefon(v) {
-  let s = String(v || "").replace(/\D/g, "");
-  if (s.length === 10 && s.startsWith("5")) s = "0" + s;
-  if (s.length > 11) s = s.slice(0, 11);
-  return s;
-}
+  // TC KİMLİK NO — 11 haneli sayı
+  let tc = "";
+  const tcM = full.match(/\b([1-9]\d{10})\b/);
+  if (tcM) tc = tcM[1];
+  if (!tc) {
+    const tcField = fieldAfter([
+      "T\\.?C\\.?\\s*K[İI]ML[İI]K\\s*(?:NO|NUMARASI)",
+      "K[İI]ML[İI]K\\s*(?:NO|NUMARASI)",
+      "TC\\s*(?:NO|NUMARASI)"
+    ]);
+    const digits = tcField.replace(/\D/g, "");
+    if (digits.length === 11) tc = digits;
+  }
 
-function temizTc(v) {
-  const s = String(v || "").replace(/\D/g, "");
-  return s.length === 11 ? s : "";
-}
-
-function temizTarih(v) {
-  const m = String(v || "").match(/(\d{2})[./-](\d{2})[./-](\d{4})/);
-  return m ? `${m[3]}-${m[2]}-${m[1]}` : "";
-}
-
-async function parseKisiBilgileriByCrop(file) {
-  const a = await cropAreasFromFile(file);
-  const [adRaw, tcRaw, dogumRaw, telRaw, ilceRaw, mahalleRaw] = await Promise.all([
-    readAreaText(a.ad, "ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZabcçdefgğhıijklmnoöprsştuüvyz "),
-    readAreaText(a.tc, "0123456789"),
-    readAreaText(a.dogum, "0123456789./-"),
-    readAreaText(a.tel, "0123456789"),
-    readAreaText(a.ilce, "ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZabcçdefgğhıijklmnoöprsştuüvyz "),
-    readAreaText(a.mahalle, "ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZabcçdefgğhıijklmnoöprsştuüvyz "),
+  // DOĞUM TARİHİ
+  let dogumRaw = fieldAfter([
+    "DO[GĞ]UM\\s*TAR[İI]H[İI]",
+    "D\\.\\s*TAR[İI]H[İI]",
+    "DO[GĞ]UM\\s*Y[İI]L[İI]"
   ]);
+  // Tarih formatı ara (GG.AA.YYYY veya GG/AA/YYYY veya YYYY-MM-DD)
+  const tarihM = (dogumRaw + " " + full).match(/(\d{2})[.\/\-](\d{2})[.\/\-](\d{4})/);
+  const dogum = tarihM ? `${tarihM[3]}-${tarihM[2]}-${tarihM[1]}` : "";
 
-  const ad = temizAd(adRaw);
-  const tc = temizTc(tcRaw);
-  const dogum = temizTarih(dogumRaw);
-  const telefon = temizTelefon(telRaw);
-  const adres = [mahalleRaw, ilceRaw]
-    .map(x => String(x || "").replace(/\s+/g, " ").trim().toLocaleUpperCase("tr-TR"))
-    .filter(Boolean)
-    .join(" / ");
+  // TELEFON — 05xx veya 5xx başlayan
+  let telefon = "";
+  const telPatterns = full.match(/\b(0?5\d[\s\-]?\d{3}[\s\-]?\d{2}[\s\-]?\d{2})\b/g);
+  if (telPatterns && telPatterns.length > 0) {
+    telefon = telPatterns[0].replace(/\D/g, "");
+    if (telefon.length === 10 && telefon.startsWith("5")) telefon = "0" + telefon;
+    if (telefon.length > 11) telefon = telefon.slice(0, 11);
+  }
+  if (!telefon) {
+    const telField = fieldAfter([
+      "TELEFON\\s*(?:NO|NUMARASI)?",
+      "CEP\\s*(?:TELEFONU|NO)",
+      "GSM"
+    ]);
+    const digits = telField.replace(/\D/g, "");
+    if (digits.length >= 10) {
+      telefon = digits.length === 10 ? "0" + digits : digits.slice(0, 11);
+    }
+  }
 
-  return { ad_soyad: ad, tc, dogum, telefon, adres };
+  // ADRES
+  let adres = fieldAfter([
+    "ADRES[İI]?",
+    "OTURDU[GĞ]U\\s*ADRES",
+    "IKAMET\\s*ADRES[İI]",
+    "EV\\s*ADRES[İI]"
+  ]);
+  // Çok kısa ise mahalle + ilçe ile doldur
+  if (adres.length < 5) {
+    const mah = fieldAfter(["MAHALLE", "MAH\\.", "MAHALL[İI]"]);
+    const ilce = fieldAfter(["[İI]L[ÇC]E", "ILCE"]);
+    adres = [mah, ilce].filter(Boolean).join(" / ").toLocaleUpperCase("tr-TR");
+  }
+
+  return {
+    ad_soyad: adSoyad,
+    tc,
+    dogum,
+    telefon,
+    adres: adres.slice(0, 200)
+  };
 }
 
 function parseKisiBilgileriFromOcr(rawText) {

@@ -1377,7 +1377,10 @@ async function claudeVisionOku(file, durumEl) {
   const base64 = await fileToBase64(file);
   const mediaType = file.type || "image/jpeg";
 
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
+  // Cloudflare Worker proxy URL — worker kurulumundan sonra buraya yaz
+  const PROXY_URL = "https://sir-proxy.KULLANICI_ADIN.workers.dev";
+
+  const response = await fetch(PROXY_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({

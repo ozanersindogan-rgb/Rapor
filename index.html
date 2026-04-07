@@ -1378,7 +1378,7 @@ async function claudeVisionOku(file, durumEl) {
   const mediaType = file.type || "image/jpeg";
 
   // Cloudflare Worker proxy URL — worker kurulumundan sonra buraya yaz
-  const PROXY_URL = "https://sir-proxy.ozanersindogan.workers.dev";
+  const PROXY_URL = "https://sir-proxy.KULLANICI_ADIN.workers.dev";
 
   const response = await fetch(PROXY_URL, {
     method: "POST",
@@ -1395,13 +1395,15 @@ async function claudeVisionOku(file, durumEl) {
           },
           {
             type: "text",
-            text: `Bu bir Türkçe sosyal yardım başvuru formunun fotoğrafı. Formdaki şu alanları bul ve sadece JSON formatında döndür, başka hiçbir şey yazma:
+            text: `Bu bir Türkçe sosyal yardım başvuru formunun fotoğrafı (E-MASA BİLGİ FORMU). Formdaki şu alanları bul ve sadece JSON formatında döndür, başka hiçbir şey yazma:
 {
-  "ad_soyad": "...",
-  "tc": "...",
-  "dogum": "GG.AA.YYYY formatında",
-  "telefon": "05xxxxxxxxx formatında",
-  "adres": "..."
+  "ad_soyad": "İŞİN İLGİLİSİ bölümündeki AD, SOYAD / ÜNVAN alanı",
+  "tc": "TCKimlik/Vergi NO alanındaki 11 haneli sayı",
+  "dogum": "D.TARİHİ alanı, GG.AA.YYYY formatında",
+  "telefon": "GSM alanı, 05xxxxxxxxx formatında",
+  "adres": "AÇIKLAMA alanındaki adres veya MAH./KÖY + İLÇE birleşimi",
+  "basvuru_no": "Formun üst kısmındaki İŞ NUMARASI (örn: 2026-36600)",
+  "basvuru_tarihi": "Formun üst kısmındaki TARİHİ alanı, GG.AA.YYYY formatında (örn: 24/02/2026)"
 }
 Değer bulunamazsa o alanı boş string bırak. Sadece JSON yaz.`
           }
@@ -1426,12 +1428,15 @@ Değer bulunamazsa o alanı boş string bırak. Sadece JSON yaz.`
     throw new Error("Claude yanıtı parse edilemedi: " + text.slice(0, 100));
   }
 
-  // dogum: GG.AA.YYYY → YYYY-MM-GG (input[type=date] formatı)
-  let dogum = "";
-  if (parsed.dogum) {
-    const m = String(parsed.dogum).match(/(\d{2})[.\/\-](\d{2})[.\/\-](\d{4})/);
-    if (m) dogum = `${m[3]}-${m[2]}-${m[1]}`;
+  // Tarih dönüştürücü: GG.AA.YYYY → YYYY-MM-DD
+  function parseTarih(v) {
+    const m = String(v || "").match(/(\d{1,2})[.\/\-](\d{1,2})[.\/\-](\d{4})/);
+    if (!m) return "";
+    return `${m[3]}-${m[2].padStart(2,"0")}-${m[1].padStart(2,"0")}`;
   }
+
+  const dogum = parseTarih(parsed.dogum);
+  const basvuru_tarihi = parseTarih(parsed.basvuru_tarihi);
 
   // TC temizle
   const tc = String(parsed.tc || "").replace(/\D/g, "");
@@ -1446,7 +1451,9 @@ Değer bulunamazsa o alanı boş string bırak. Sadece JSON yaz.`
     tc: tc.length === 11 ? tc : "",
     dogum,
     telefon: tel,
-    adres: String(parsed.adres || "").trim()
+    adres: String(parsed.adres || "").trim(),
+    basvuru_no: String(parsed.basvuru_no || "").trim(),
+    basvuru_tarihi
   };
 }
 
@@ -1805,9 +1812,11 @@ async function aiRaporOlustur() {
     if (setInputValue("dogum", parsed.dogum)) doldurulan.push("Doğum Tarihi");
     if (setInputValue("telefon", parsed.telefon)) doldurulan.push("Telefon");
     if (setInputValue("adres", parsed.adres)) doldurulan.push("Adres");
+    if (setInputValue("basvuru_no", parsed.basvuru_no)) doldurulan.push("Başvuru No");
+    if (setInputValue("basvuru_tarihi", parsed.basvuru_tarihi)) doldurulan.push("Başvuru Tarihi");
 
     setTimeout(() => {
-      ["ad_soyad", "tc", "dogum", "telefon", "adres"].forEach((id) => {
+      ["ad_soyad", "tc", "dogum", "telefon", "adres", "basvuru_no", "basvuru_tarihi"].forEach((id) => {
         const el = document.getElementById(id);
         if (el) {
           try { el.blur(); el.focus(); el.blur(); } catch (e) {}
@@ -1823,9 +1832,8 @@ async function aiRaporOlustur() {
     durumEl.style.border = "1.5px solid #6ee7b7";
     durumEl.style.color = "#065f46";
     durumEl.textContent =
-      "✅ Kişi Bilgisi alanları dolduruldu.\n" +
-      "Doldurulan alanlar: " + doldurulan.join(", ") + "\n\n" +
-      "Görüşme Tarihi, Başvuru Tarihi, Başvuru No ve diğer alanları siz manuel dolduracaksınız.";
+      "✅ Alanlar dolduruldu: " + doldurulan.join(", ") + "\n\n" +
+      "Görüşme Tarihi ve diğer alanları siz manuel dolduracaksınız.";
     mesaj("✅ Kişi bilgileri otomatik dolduruldu!");
   } catch (err) {
     durumEl.style.background = "#fef2f2";

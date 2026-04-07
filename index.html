@@ -1387,6 +1387,113 @@ function satirSonuDeger(text, labelRegex) {
   return m ? ocrNormalize(m[1]) : "";
 }
 
+
+async function preprocessCanvas(canvas) {
+  const c = document.createElement("canvas");
+  const ctx = c.getContext("2d");
+  c.width = canvas.width;
+  c.height = canvas.height;
+  ctx.drawImage(canvas, 0, 0);
+
+  const img = ctx.getImageData(0, 0, c.width, c.height);
+  const d = img.data;
+  for (let i = 0; i < d.length; i += 4) {
+    const avg = (d[i] + d[i+1] + d[i+2]) / 3;
+    const v = avg > 165 ? 255 : 0;
+    d[i] = d[i+1] = d[i+2] = v;
+  }
+  ctx.putImageData(img, 0, 0);
+  return c;
+}
+
+async function cropAreasFromFile(file) {
+  const img = await createImageBitmap(file);
+  const base = document.createElement("canvas");
+  const bctx = base.getContext("2d");
+  base.width = img.width;
+  base.height = img.height;
+  bctx.drawImage(img, 0, 0);
+
+  function crop(rx, ry, rw, rh) {
+    const x = Math.max(0, Math.floor(base.width * rx));
+    const y = Math.max(0, Math.floor(base.height * ry));
+    const w = Math.max(1, Math.floor(base.width * rw));
+    const h = Math.max(1, Math.floor(base.height * rh));
+    const c = document.createElement("canvas");
+    const ctx = c.getContext("2d");
+    c.width = w;
+    c.height = h;
+    ctx.drawImage(base, x, y, w, h, 0, 0, w, h);
+    return c;
+  }
+
+  return {
+    ad: crop(0.11, 0.235, 0.34, 0.045),
+    tc: crop(0.11, 0.315, 0.34, 0.045),
+    dogum: crop(0.52, 0.315, 0.18, 0.045),
+    tel: crop(0.11, 0.372, 0.34, 0.045),
+    ilce: crop(0.11, 0.435, 0.20, 0.042),
+    mahalle: crop(0.11, 0.472, 0.22, 0.042),
+  };
+}
+
+async function readAreaText(canvas, whitelist) {
+  const prepared = await preprocessCanvas(canvas);
+  const result = await Tesseract.recognize(prepared, "tur+eng", {
+    logger: () => {},
+    tessedit_char_whitelist: whitelist || undefined
+  });
+  return String(result?.data?.text || "").replace(/\s+/g, " ").trim();
+}
+
+function temizAd(v) {
+  return String(v || "")
+    .replace(/[^A-ZÇĞİÖŞÜa-zçğıöşü\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLocaleUpperCase("tr-TR");
+}
+
+function temizTelefon(v) {
+  let s = String(v || "").replace(/\D/g, "");
+  if (s.length === 10 && s.startsWith("5")) s = "0" + s;
+  if (s.length > 11) s = s.slice(0, 11);
+  return s;
+}
+
+function temizTc(v) {
+  const s = String(v || "").replace(/\D/g, "");
+  return s.length === 11 ? s : "";
+}
+
+function temizTarih(v) {
+  const m = String(v || "").match(/(\d{2})[./-](\d{2})[./-](\d{4})/);
+  return m ? `${m[3]}-${m[2]}-${m[1]}` : "";
+}
+
+async function parseKisiBilgileriByCrop(file) {
+  const a = await cropAreasFromFile(file);
+  const [adRaw, tcRaw, dogumRaw, telRaw, ilceRaw, mahalleRaw] = await Promise.all([
+    readAreaText(a.ad, "ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZabcçdefgğhıijklmnoöprsştuüvyz "),
+    readAreaText(a.tc, "0123456789"),
+    readAreaText(a.dogum, "0123456789./-"),
+    readAreaText(a.tel, "0123456789"),
+    readAreaText(a.ilce, "ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZabcçdefgğhıijklmnoöprsştuüvyz "),
+    readAreaText(a.mahalle, "ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZabcçdefgğhıijklmnoöprsştuüvyz "),
+  ]);
+
+  const ad = temizAd(adRaw);
+  const tc = temizTc(tcRaw);
+  const dogum = temizTarih(dogumRaw);
+  const telefon = temizTelefon(telRaw);
+  const adres = [mahalleRaw, ilceRaw]
+    .map(x => String(x || "").replace(/\s+/g, " ").trim().toLocaleUpperCase("tr-TR"))
+    .filter(Boolean)
+    .join(" / ");
+
+  return { ad_soyad: ad, tc, dogum, telefon, adres };
+}
+
 function parseKisiBilgileriFromOcr(rawText) {
   const text = ocrNormalize(rawText)
     .replace(/AD,\s*SOYAD/g, "AD SOYAD")
@@ -1565,7 +1672,10 @@ async function aiRaporOlustur() {
     }
 
     durumEl.textContent = "📸 Fotoğraf tarayıcıda okunuyor, kişi bilgileri dolduruluyor…";
-    const parsed = await fotoKisiBilgileriOku(fotoFile, durumEl);
+    let parsed = await parseKisiBilgileriByCrop(fotoFile);
+    if (!parsed.ad_soyad && !parsed.tc && !parsed.telefon) {
+      parsed = await fotoKisiBilgileriOku(fotoFile, durumEl);
+    }
 
     const doldurulan = [];
     if (setInputValue("ad_soyad", parsed.ad_soyad)) doldurulan.push("Ad Soyad");

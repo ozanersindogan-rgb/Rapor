@@ -635,26 +635,46 @@ function kayitBuKullaniciyaAitMi(k) {
 // ── PIN ──
 let _pin = "";
 let aktifKullanici = null;
+let secilenKullanici = null;
+
 function pGir(r) {
+  if (!secilenKullanici) {
+    document.getElementById("pin-hata").textContent = "Önce kullanıcı seçin";
+    return;
+  }
   if (_pin.length >= 4) return;
   _pin += r; _pinGuncelle();
+  document.getElementById("pin-hata").textContent = "";
   if (_pin.length === 4) setTimeout(_pinKontrol, 150);
 }
-function pSil() { _pin = _pin.slice(0,-1); _pinGuncelle(); document.getElementById("pin-hata").textContent = ""; }
+
+function pSil() {
+  _pin = _pin.slice(0,-1);
+  _pinGuncelle();
+  document.getElementById("pin-hata").textContent = "";
+}
+
+function _pinTemizle() {
+  _pin = "";
+  _pinGuncelle();
+}
+
 function _pinGuncelle() {
   for (let i = 0; i < 4; i++) {
     const d = document.getElementById("pd"+i);
     if (!d) continue;
-    d.style.background     = i < _pin.length ? "var(--gold)" : "rgba(255,255,255,.15)";
-    d.style.borderColor    = i < _pin.length ? "var(--gold)" : "rgba(255,255,255,.25)";
-    d.style.boxShadow      = i < _pin.length ? "0 0 8px rgba(201,168,76,.5)" : "none";
+    d.style.background  = i < _pin.length ? "var(--gold)" : "rgba(255,255,255,.15)";
+    d.style.borderColor = i < _pin.length ? "var(--gold)" : "rgba(255,255,255,.25)";
+    d.style.boxShadow   = i < _pin.length ? "0 0 8px rgba(201,168,76,.5)" : "none";
   }
 }
+
 function girisTamamla(kullanici) {
   aktifKullanici = kullanici;
+  secilenKullanici = kullanici;
   try {
-    localStorage.setItem("sir_kullanici", kullanici.id);
-    localStorage.setItem("sir_pin", kullanici.pin);
+    localStorage.removeItem("sir_kullanici");
+    localStorage.removeItem("sir_pin");
   } catch(e) {}
   document.getElementById("pin-ekran").style.display = "none";
   document.getElementById("app").style.display = "block";
@@ -662,32 +682,45 @@ function girisTamamla(kullanici) {
   if (badge) badge.textContent = kullanici.ad;
   appBaslat();
 }
+
 function _pinKontrol() {
-  const kullanici = kullaniciBulByPin(_pin);
-  if (kullanici) {
-    girisTamamla(kullanici);
+  if (!secilenKullanici) {
+    document.getElementById("pin-hata").textContent = "Önce kullanıcı seçin";
+    _pinTemizle();
+    return;
+  }
+  if (_pin === secilenKullanici.pin) {
+    girisTamamla(secilenKullanici);
+    _pinTemizle();
+    document.getElementById("pin-hata").textContent = "";
   } else {
     document.getElementById("pin-hata").textContent = "Hatalı PIN, tekrar deneyin";
-    _pin = "";
-    setTimeout(() => { _pinGuncelle(); document.getElementById("pin-hata").textContent = ""; }, 800);
+    _pinTemizle();
   }
 }
+
 function kullanicisecim(isim) {
   const normalized = String(isim || "").toLocaleLowerCase("tr-TR").trim();
-  const kullanici = Object.values(KULLANICILAR).find(k => {
+  const eslestirme = {
+    "ozan ersin doğan": "ozan",
+    "ozan ersin dogan": "ozan",
+    "ozan": "ozan",
+    "aybüke": "aybuke",
+    "aybuke": "aybuke"
+  };
+  const kullaniciId = eslestirme[normalized] || normalized;
+  const kullanici = kullaniciBulById(kullaniciId) || Object.values(KULLANICILAR).find(k => {
     const adNorm = k.ad.toLocaleLowerCase("tr-TR");
     const idNorm = k.id.toLocaleLowerCase("tr-TR");
-    return (
-      adNorm === normalized ||
-      idNorm === normalized ||
-      normalized.includes(adNorm) ||
-      adNorm.includes(normalized) ||
-      normalized.includes(idNorm)
-    );
+    return adNorm === normalized || idNorm === normalized;
   });
+
   if (kullanici) {
-    girisTamamla(kullanici);
+    secilenKullanici = kullanici;
+    _pinTemizle();
+    document.getElementById("pin-hata").textContent = kullanici.ad + " seçildi. PIN girin.";
   } else {
+    secilenKullanici = null;
     document.getElementById("pin-hata").textContent = "Kullanıcı eşleşmedi";
   }
 }
@@ -1922,8 +1955,6 @@ function aiRaporUygula() {
 
 // ── APP BAŞLAT ──
 function appBaslat() {
-  const kayitliId = (!aktifKullanici && (() => { try { return localStorage.getItem("sir_kullanici"); } catch(e) { return ""; } })()) || "";
-  if (!aktifKullanici && kayitliId) aktifKullanici = kullaniciBulById(kayitliId);
   // Kullanıcı badge güncelle
   const badge = document.getElementById("kullanici-badge");
   if (badge && aktifKullanici) badge.textContent = aktifKullanici.ad;

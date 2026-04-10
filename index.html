@@ -1403,7 +1403,7 @@ function oykuYaz(f) {
   const parcalar = [];
 
   // 1. Başvurucu
-  let c1 = ad + " görüşmemizde";
+  let c1 = ad + " görüşmemizde" + (f.uzman_gozlemi ? " " + f.uzman_gozlemi + ";" : "");
 
   // 2. Eş bilgisi
   if (f.es_ad && f.es_yas) {
@@ -1555,7 +1555,7 @@ async function wordIndir(data) {
     kimlikSatiri("Kurumdan Talebi",       f.talep || "-"),
     kimlikSatiri("Adres",                 f.adres || "-",  "\t\t\t\t"),
     kimlikSatiri("Tel No",                f.telefon || "-", "\t\t\t\t"),
-    kimlikSatiri("Raporu Düzenleyen",     (aktifKullanici || "Sosyal Hizmet Uzmanı") + " – Sosyal Hizmet Uzmanı", "\t\t"),
+    kimlikSatiri("Raporu Düzenleyen",     ((aktifKullanici && aktifKullanici.ad) ? aktifKullanici.ad : "Sosyal Hizmet Uzmanı") + " – Sosyal Hizmet Uzmanı", "\t\t"),
     kimlikSatiri("Başvuru Tarihi",          f.basvuru_tarihi ? trTarih(f.basvuru_tarihi) : "-", "\t\t"),
     kimlikSatiri("Sosyal İnceleme Tarihi", bugunTarih, "\t"),
     bos(),
@@ -1581,8 +1581,7 @@ async function wordIndir(data) {
     degSatiri("-Araç ve Tapu Kayıt Bilgileri:", degerlendirmeYaz(f).arac),
     degSatiri("-Kuşadası Kaymakamlığı SYDV\'den Alınan Bilgileri:", degerlendirmeYaz(f).sydv),
     degSatiri("-Belediyemizden Almış Olduğu Yardımlar:", degerlendirmeYaz(f).bel),
-    ...(f.uzman_gozlemi ? [degSatiri("-Uzman Gözlemi:", f.uzman_gozlemi)] : []),
-    ...(f.dosya_link ? [degSatiri("-Belge/Fotoğraf:", f.dosya_link)] : []),
+
     bos(),
 
     // SONUÇ
@@ -1591,7 +1590,7 @@ async function wordIndir(data) {
     bos(), bos(),
 
     // İMZA
-    _p([_r(aktifKullanici || "Sosyal Hizmet Uzmanı")], { alignment: docx.AlignmentType.RIGHT }),
+    _p([_r((aktifKullanici && aktifKullanici.ad) ? aktifKullanici.ad : "")], { alignment: docx.AlignmentType.RIGHT }),
     _p([_r("Sosyal Hizmet Uzmanı")],    { alignment: docx.AlignmentType.RIGHT }),
     _p([_r(bugunTarih)],                { alignment: docx.AlignmentType.RIGHT }),
   ];

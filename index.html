@@ -8,7 +8,6 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="https://unpkg.com/tesseract.js@5/dist/tesseract.min.js"></script>
 <script>
 window.addEventListener("load", function () {
   if (typeof pdfjsLib !== "undefined") {
@@ -2087,137 +2086,7 @@ async function fotoKisiBilgileriOku(file, durumEl) {
       }
     }
   });
-  const rawText = result?.data?.text || "";
-
-  // Her iki parser'ı çalıştır, daha fazla alan dolduranı seç
-  const r1 = parseKisiBilgileriFromOcr(rawText);
-  const r2 = parseSosyalYardimFormu(rawText);
-  const r3 = parseEMasaFormu(rawText);
-
-  function dolu(obj) {
-    return Object.values(obj).filter(v => v && String(v).trim().length > 1).length;
-  }
-
-  // En iyi sonucu alan parser'ı tercih et, eksik alanları diğerinden tamamla
-  const best = dolu(r3) >= dolu(r1) && dolu(r3) >= dolu(r2) ? r3
-             : dolu(r1) >= dolu(r2) ? r1 : r2;
-
-  // Tüm parser'lardan eksik alanları doldur
-  const merged = Object.assign({}, best);
-  for (const src of [r3, r1, r2]) {
-    for (const k of Object.keys(src)) {
-      if (!merged[k] || !String(merged[k]).trim()) {
-        if (src[k] && String(src[k]).trim()) merged[k] = src[k];
-      }
-    }
-  }
-  return merged;
-}
-
-// E-MASA BİLGİ FORMU için özel parser
-function parseEMasaFormu(rawText) {
-  const text = rawText.replace(/\r/g, "").replace(/\u00A0/g, " ");
-  const lines = text.split("\n").map(l => l.trim()).filter(Boolean);
-  const full = lines.join("\n");
-
-  function after(patterns) {
-    for (const pat of patterns) {
-      // Aynı satırda etiket: değer
-      const re = new RegExp(pat + "[:\\s]+([^\\n]{2,80})", "i");
-      const m = full.match(re);
-      if (m) {
-        const v = m[1].replace(/^[\s:;\-]+/, "").trim();
-        if (v.length >= 2) return v;
-      }
-      // Etiket tek satır, değer bir sonraki satır
-      for (let i = 0; i < lines.length; i++) {
-        if (new RegExp(pat, "i").test(lines[i])) {
-          const afterLabel = lines[i].replace(new RegExp(".*" + pat, "i"), "").replace(/^[\s:;]+/, "").trim();
-          if (afterLabel.length >= 2) return afterLabel;
-          if (lines[i+1]) return lines[i+1].replace(/^[\s:;]+/, "").trim();
-        }
-      }
-    }
-    return "";
-  }
-
-  // AD SOYAD — "AD, SOYAD / ÜNVAN" veya "AD, SOYAD"
-  let adSoyad = after([
-    "AD[,\\s]+SOYAD\\s*\\/\\s*[ÜU]NVAN",
-    "AD[,\\s]+SOYAD\\s*\\/\\s*UNVAN",
-    "AD[,\\s]+SOYAD",
-    "ADI\\s*SOYADI"
-  ]);
-  // Sadece harf + boşluk bırak, büyük yap
-  adSoyad = adSoyad.replace(/[^A-ZÇĞİÖŞÜa-zçğıöşü\s]/g, " ").replace(/\s+/g, " ").trim().toLocaleUpperCase("tr-TR");
-  // Eğer "İMZA" veya çok kısa veya sayı içeriyorsa sıradaki harf bloğunu dene
-  if (!adSoyad || adSoyad.length < 4 || /İMZA|IMZA/.test(adSoyad)) {
-    // Formdaki isim genellikle TC numarasından önce gelir
-    const tcIdx = full.search(/\b[1-9]\d{10}\b/);
-    if (tcIdx > 0) {
-      const beforeTc = full.slice(Math.max(0, tcIdx - 200), tcIdx);
-      const nameLines = beforeTc.split("\n").map(l => l.trim()).filter(l => /^[A-ZÇĞİÖŞÜ]{3,}(\s+[A-ZÇĞİÖŞÜ]{2,})+$/.test(l));
-      if (nameLines.length > 0) adSoyad = nameLines[nameLines.length - 1];
-    }
-  }
-
-  // TC KİMLİK — 11 haneli, 0 ile başlamayan
-  let tc = "";
-  const tcM = full.match(/\b([1-9]\d{10})\b/);
-  if (tcM) tc = tcM[1];
-  if (!tc) {
-    const tcVal = after(["TCKimlik\\/Vergi\\s*NO", "T\\.?C\\.?\\s*K[İI]ML[İI]K", "TCKN"]);
-    const d = tcVal.replace(/\D/g, "");
-    if (d.length === 11) tc = d;
-  }
-
-  // DOĞUM TARİHİ — "D.TARİHİ" alanı
-  let dogum = "";
-  const dtVal = after(["D\\.?TAR[İI]H[İI]", "DO[GĞ]UM\\s*TAR[İI]H[İI]"]);
-  const dtM = (dtVal + " " + full).match(/(\d{1,2})[.\/\-](\d{1,2})[.\/\-](\d{4})/);
-  if (dtM) dogum = `${dtM[3]}-${dtM[2].padStart(2,"0")}-${dtM[1].padStart(2,"0")}`;
-
-  // TELEFON — GSM alanı
-  let telefon = "";
-  const gsmVal = after(["GSM", "TELEFON"]);
-  const telD = gsmVal.replace(/\D/g, "");
-  if (telD.length >= 10) {
-    telefon = telD.length === 10 && telD.startsWith("5") ? "0" + telD : telD.slice(0, 11);
-  }
-  if (!telefon) {
-    const telM = full.match(/\b(0?5\d[\s\-]?\d{3}[\s\-]?\d{2}[\s\-]?\d{2})\b/);
-    if (telM) telefon = telM[1].replace(/\D/g, "");
-    if (telefon.length === 10 && telefon.startsWith("5")) telefon = "0" + telefon;
-  }
-
-  // ADRES — AÇIKLAMA alanı veya MAH./KÖY + İLÇE
-  let adres = after(["AÇIKLAMA"]);
-  // Çok uzunsa kıs
-  if (adres.length > 200) adres = adres.slice(0, 200);
-  if (adres.length < 5) {
-    const ilce = after(["[İI]L[ÇC]E"]);
-    const mah  = after(["MAH\\.\\/K[ÖO]Y", "MAH\\.", "MAHALLE"]);
-    const cad  = after(["CADDE\\/SOKAK", "CADDE", "SOKAK"]);
-    adres = [ilce, mah, cad].filter(Boolean).join(" / ").toLocaleUpperCase("tr-TR");
-  }
-
-  // BAŞVURU NO — "İŞ NUMARASI" veya "2026-XXXX" pattern
-  let basvuru_no = after(["[İI][SŞ]\\s*NUMARASI", "NUMARASI\\s*:"]);
-  if (!basvuru_no) {
-    const noM = full.match(/\b(20\d{2}-\d{3,6})\b/);
-    if (noM) basvuru_no = noM[1];
-  }
-  basvuru_no = basvuru_no.replace(/\s.*$/, "").trim(); // sadece ilk token
-
-  // BAŞVURU TARİHİ — "TARİHİ :" veya "15/01/2026" gibi
-  let basvuru_tarihi = "";
-  const tarihiVal = after(["TAR[İI]H[İI]\\s*:"]);
-  const bTarM = tarihiVal.match(/(\d{1,2})[.\/\-](\d{1,2})[.\/\-](\d{4})/);
-  if (bTarM) {
-    basvuru_tarihi = `${bTarM[3]}-${bTarM[2].padStart(2,"0")}-${bTarM[1].padStart(2,"0")}`;
-  }
-
-  return { ad_soyad: adSoyad, tc, dogum, telefon, adres, basvuru_no, basvuru_tarihi };
+  return parseKisiBilgileriFromOcr(result?.data?.text || "");
 }
 
 let aiRaporMetni = "";
@@ -2254,8 +2123,8 @@ async function aiRaporOlustur() {
       throw new Error("Belge görsele çevrilemedi");
     }
 
-    durumEl.textContent = "📖 Belge okunuyor (OCR)…";
-    const parsed = await fotoKisiBilgileriOku(fotoFile, durumEl);
+    durumEl.textContent = "🤖 Claude ile belge okunuyor, kişi bilgileri dolduruluyor…";
+    const parsed = await claudeVisionOku(fotoFile, durumEl);
 
     const doldurulan = [];
     if (setInputValue("ad_soyad", parsed.ad_soyad)) doldurulan.push("Ad Soyad");
@@ -2293,7 +2162,7 @@ async function aiRaporOlustur() {
     durumEl.textContent = "⚠️ Hata: " + err.message;
   } finally {
     btn.disabled = false;
-    btn.textContent = "📖 Fotoğraftan Kişi Bilgilerini Doldur";
+    btn.textContent = "🤖 Fotoğraftan Kişi Bilgilerini Doldur";
   }
 }
 

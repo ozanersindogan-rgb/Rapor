@@ -8,6 +8,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://unpkg.com/tesseract.js@5/dist/tesseract.min.js"></script>
 <script>
 window.addEventListener("load", function () {
   if (typeof pdfjsLib !== "undefined") {
@@ -2123,8 +2124,8 @@ async function aiRaporOlustur() {
       throw new Error("Belge görsele çevrilemedi");
     }
 
-    durumEl.textContent = "🤖 Claude ile belge okunuyor, kişi bilgileri dolduruluyor…";
-    const parsed = await claudeVisionOku(fotoFile, durumEl);
+    durumEl.textContent = "📖 Belge okunuyor (OCR)…";
+    const parsed = await fotoKisiBilgileriOku(fotoFile, durumEl);
 
     const doldurulan = [];
     if (setInputValue("ad_soyad", parsed.ad_soyad)) doldurulan.push("Ad Soyad");
@@ -2162,7 +2163,7 @@ async function aiRaporOlustur() {
     durumEl.textContent = "⚠️ Hata: " + err.message;
   } finally {
     btn.disabled = false;
-    btn.textContent = "🤖 Fotoğraftan Kişi Bilgilerini Doldur";
+    btn.textContent = "📖 Fotoğraftan Kişi Bilgilerini Doldur";
   }
 }
 

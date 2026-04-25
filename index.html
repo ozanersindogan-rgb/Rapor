@@ -477,72 +477,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; b
           </div>
         </div>
 
-        <div id="es-bilgi-alan">
-        <div class="grid2">
-          <div class="field">
-            <label>Eşin Adı Soyadı</label>
-            <input id="es_ad" type="text" placeholder="Mehmet Yılmaz"/>
-          </div>
-          <div class="field">
-            <label>Eşin Yaşı</label>
-            <input id="es_yas" type="number" placeholder="Yaş" min="1" max="120"/>
-          </div>
-        </div>
-        <div class="grid2">
-          <div class="field">
-            <label>Eşin Mesleği / Geliri</label>
-            <input id="es_meslek" type="text" placeholder="Serbest, işsiz, 15.000 TL maaş…"/>
-          </div>
-          <div class="field">
-            <label>Çocuk Sayısı ve Yaşları</label>
-            <input id="cocuk_detay" type="text" placeholder="2 çocuk, 10 ve 14 yaş"/>
-          </div>
-        </div>
-        </div>
-        <div class="field">
-          <label>Çocuklar Okula Gidiyor mu?</label>
-          <div class="toggle-group">
-            <button class="tog-btn" id="okul-evet" onclick="toggleVar('okul','evet')">✅ Evet</button>
-            <button class="tog-btn" id="okul-hayir" onclick="toggleVar('okul','hayir')">❌ Hayır</button>
-            <button class="tog-btn" id="okul-yok" onclick="toggleVar('okul','yok')">➖ Çocuk Yok</button>
-          </div>
-        </div>
-        <div class="gizli" id="okul-sinif-alan">
-          <div class="field">
-            <label>Hangi Sınıfa Gidiyorlar?</label>
-            <input id="okul_sinif" type="text" placeholder="Örn: 1. sınıf ilkokul, 3. sınıf ortaokul…"/>
-          </div>
-        </div>
-        <div class="field">
-          <label>Konut Durumu</label>
-          <div class="toggle-group">
-            <button class="tog-btn" id="konut-kira" onclick="toggleVar('konut','kira')">🏠 Kira</button>
-            <button class="tog-btn" id="konut-kendisi" onclick="toggleVar('konut','kendisi')">🏡 Kendisine Ait</button>
-            <button class="tog-btn" id="konut-akraba" onclick="toggleVar('konut','akraba')">👨‍👩‍👦 Akraba Evi</button>
-          </div>
-        </div>
-        <div class="gizli" id="konut-kira-alan">
-          <div class="grid2">
-            <div class="field">
-              <label>Kira Miktarı (TL)</label>
-              <input id="kira_miktar" type="text" placeholder="Örn: 20.000"/>
-            </div>
-            <div class="field">
-              <label>Kira Borcu</label>
-              <input id="kira_borcu" type="text" placeholder="Örn: 2 aylık, yok"/>
-            </div>
-          </div>
-        </div>
-        <div class="field">
-          <label>Fatura Borçları</label>
-          <div class="toggle-group">
-            <button class="tog-btn" id="fatura-var" onclick="toggleVar('fatura','var')">✅ Var</button>
-            <button class="tog-btn" id="fatura-hayir" onclick="toggleVar('fatura','hayir')">❌ Yok</button>
-          </div>
-          <div class="gizli" id="fatura-alan">
-            <input id="fatura_borc" type="text" placeholder="Örn: 1.000 TL elektrik, 500 TL su" style="margin-top:8px;width:100%;padding:10px;border-radius:8px;border:1.5px solid #ddd;font-size:15px;"/>
-          </div>
-        </div>
+        
         <div class="field">
           <label>🔍 Sosyal Hizmet Uzmanı Gözlemi</label>
           <textarea id="uzman_gozlemi" rows="6" placeholder="Vatandaşın genel durumu, yaşam koşulları, sağlık/engel bilgisi, gelir/çalışma durumu, öne çıkan ihtiyaçlar ve uzman değerlendirmesi…"></textarea>
@@ -1403,55 +1338,9 @@ function oykuYaz(f) {
   const parcalar = [];
 
   // 1. Başvurucu
-  let c1 = ad + " görüşmemizde" + (f.uzman_gozlemi ? " " + f.uzman_gozlemi + ";" : "");
+  let c1 = ad + " yapılan görüşmede" + (f.uzman_gozlemi ? " " + f.uzman_gozlemi + ";" : "");
 
-  // 2. Eş bilgisi
-  if (f.es_ad && f.es_yas) {
-    c1 += ", eşi " + f.es_ad + "'ın " + f.es_yas + " yaşında olduğunu";
-    if (f.es_meslek) c1 += " ve " + f.es_meslek + " olduğunu";
-  } else if (f.es_ad) {
-    c1 += ", eşi " + f.es_ad + " ile birlikte yaşadığını";
-    if (f.es_meslek) c1 += ", eşinin " + f.es_meslek + " olduğunu";
-  }
-
-  // 3. Konut durumu
-  if (f.konut_durum === "kira") {
-    c1 += ", oturmuş oldukları evin kira olduğunu";
-    if (f.kira_miktar) c1 += ", " + f.kira_miktar + " TL kira ödediklerini";
-    if (f.kira_borcu && f.kira_borcu.toLowerCase() !== "yok") {
-      c1 += ", " + f.kira_borcu + " kira borçları olduğunu";
-    } else if (f.kira_borcu === "yok" || f.kira_borcu === "Yok") {
-      c1 += ", kira borçlarının olmadığını";
-    }
-  } else if (f.konut_durum === "kendisi") {
-    c1 += ", oturmuş oldukları evin kendilerine ait olduğunu";
-  } else if (f.konut_durum === "akraba") {
-    c1 += ", akrabalarına ait bir evde ikamet ettiklerini";
-  }
-
-  // 4. Çocuk ve okul
-  if (f.cocuk_detay) {
-    c1 += ", " + f.cocuk_detay + " olduğunu";
-    if (f.okul_durum === "evet") {
-      c1 += ", çocuklarının okula gittiğini";
-      if (f.okul_sinif) c1 += " (" + f.okul_sinif + ")";
-    }
-    else if (f.okul_durum === "hayir") c1 += ", çocuklarının okula gitmediğini";
-  } else if (f.cocuk && f.cocuk !== "-") {
-    c1 += ", " + f.cocuk + " çocukları olduğunu";
-    if (f.okul_durum === "evet") {
-      c1 += ", çocuklarının okula gittiğini";
-      if (f.okul_sinif) c1 += " (" + f.okul_sinif + ")";
-    }
-  }
-
-  // 5. Fatura borçları
-  if (f.fatura_durum === "hayir") {
-    c1 += ", fatura borçlarının olmadığını";
-  } else if (f.fatura_durum === "var" && f.fatura_borc && f.fatura_borc.trim()) {
-    c1 += ", " + f.fatura_borc + " fatura borçları olduğunu";
-  }
-
+  
   // 6. Kapanış
   const talep = (f.talep || "yardım").toLowerCase();
   c1 += " ve bu nedenle belediyemizden " + talep + " istediklerini dile getirmiştir.";

@@ -261,26 +261,14 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; b
       <div class="pin-alt">Kuşadası Belediyesi</div>
     </div>
     <div style="padding:20px 16px 24px;">
-      <p style="color:rgba(255,255,255,.6);font-size:12px;letter-spacing:1px;text-transform:uppercase;text-align:center;margin-bottom:16px;">Kullanıcı Seçin</p>
-      <div style="display:flex;flex-direction:column;gap:10px;">
-        <button class="kullanici-btn" onclick="kullanicisecim('Ozan Ersin DOĞAN')">
-          <span class="kb-avatar">OZY</span>
-          <span class="kb-isim">Ozan Ersin DOĞAN</span>
-          <span class="kb-unvan">Sosyal Hizmet Uzmanı</span>
-        </button>
-        <button class="kullanici-btn" onclick="kullanicisecim('Aybüke')">
-          <span class="kb-avatar">AY</span>
-          <span class="kb-isim">Aybüke</span>
-          <span class="kb-unvan">Sosyal Hizmet Uzmanı</span>
-        </button>
-      </div>
+      <p style="color:rgba(255,255,255,.6);font-size:12px;letter-spacing:1px;text-transform:uppercase;text-align:center;margin-bottom:16px;">PIN Kodunuzu Girin</p>
       <div class="pin-dots">
         <div class="pin-dot" id="pd0"></div>
         <div class="pin-dot" id="pd1"></div>
         <div class="pin-dot" id="pd2"></div>
         <div class="pin-dot" id="pd3"></div>
       </div>
-      <div id="pin-hata" class="pin-hata">Kullanıcı seçin</div>
+      <div id="pin-hata" class="pin-hata"></div>
       <div class="pin-grid">
         <button class="pin-tuş" onclick="pGir('1')">1</button>
         <button class="pin-tuş" onclick="pGir('2')">2</button>
@@ -627,10 +615,6 @@ let aktifKullanici = null;
 let secilenKullanici = null;
 
 function pGir(r) {
-  if (!secilenKullanici) {
-    document.getElementById("pin-hata").textContent = "Önce kullanıcı seçin";
-    return;
-  }
   if (_pin.length >= 4) return;
   _pin += r; _pinGuncelle();
   document.getElementById("pin-hata").textContent = "";
@@ -673,13 +657,9 @@ function girisTamamla(kullanici) {
 }
 
 function _pinKontrol() {
-  if (!secilenKullanici) {
-    document.getElementById("pin-hata").textContent = "Önce kullanıcı seçin";
-    _pinTemizle();
-    return;
-  }
-  if (_pin === secilenKullanici.pin) {
-    girisTamamla(secilenKullanici);
+  const kullanici = kullaniciBulByPin(_pin);
+  if (kullanici) {
+    girisTamamla(kullanici);
     _pinTemizle();
     document.getElementById("pin-hata").textContent = "";
   } else {
@@ -1311,6 +1291,27 @@ function _p(children, opts) {
 function _r(text, opts) {
   return new docx.TextRun(Object.assign({ text, size: 24, font: "Times New Roman" }, opts || {}));
 }
+function kimlikSatiriRow(etiket, deger) {
+  return new docx.TableRow({
+    children: [
+      new docx.TableCell({
+        width: { size: 3200, type: docx.WidthType.DXA },
+        borders: { top: { style: docx.BorderStyle.NONE }, bottom: { style: docx.BorderStyle.NONE }, left: { style: docx.BorderStyle.NONE }, right: { style: docx.BorderStyle.NONE }, insideH: { style: docx.BorderStyle.NONE }, insideV: { style: docx.BorderStyle.NONE } },
+        children: [_p([_r(etiket, { bold: true })])]
+      }),
+      new docx.TableCell({
+        width: { size: 300, type: docx.WidthType.DXA },
+        borders: { top: { style: docx.BorderStyle.NONE }, bottom: { style: docx.BorderStyle.NONE }, left: { style: docx.BorderStyle.NONE }, right: { style: docx.BorderStyle.NONE }, insideH: { style: docx.BorderStyle.NONE }, insideV: { style: docx.BorderStyle.NONE } },
+        children: [_p([_r(":", { bold: true })])]
+      }),
+      new docx.TableCell({
+        width: { size: 6400, type: docx.WidthType.DXA },
+        borders: { top: { style: docx.BorderStyle.NONE }, bottom: { style: docx.BorderStyle.NONE }, left: { style: docx.BorderStyle.NONE }, right: { style: docx.BorderStyle.NONE }, insideH: { style: docx.BorderStyle.NONE }, insideV: { style: docx.BorderStyle.NONE } },
+        children: [_p([_r(deger || "-")])]
+      })
+    ]
+  });
+}
 function kimlikSatiri(etiket, deger, tab) {
   tab = tab || "\t\t\t";
   return _p([_r(etiket, { bold: true }), _r(tab + ": ", { bold: true }), _r(deger || "-")]);
@@ -1433,20 +1434,26 @@ async function wordIndir(data) {
     }),
     bos(),
 
-    // KİŞİ BİLGİLERİ
-    kimlikSatiri("Adı Soyadı",            f.ad_soyad),
-    kimlikSatiri("Cinsiyeti",             f.cinsiyet || "-"),
-    kimlikSatiri("T.C. No",               f.tc || "-"),
-    kimlikSatiri("Doğum Tarihi",          f.dogum ? f.dogum.split("-").reverse().join(".") : "-"),
-    kimlikSatiri("Medeni Hali",           f.medeni || "-"),
-    kimlikSatiri("Çocuk Sayısı",          f.cocuk || "-"),
-    kimlikSatiri("Mesleği",               f.meslek || "-"),
-    kimlikSatiri("Kurumdan Talebi",       f.talep || "-"),
-    kimlikSatiri("Adres",                 f.adres || "-",  "\t\t\t\t"),
-    kimlikSatiri("Tel No",                f.telefon || "-", "\t\t\t\t"),
-    kimlikSatiri("Raporu Düzenleyen",     ((aktifKullanici && aktifKullanici.ad) ? aktifKullanici.ad : "Sosyal Hizmet Uzmanı") + " – Sosyal Hizmet Uzmanı", "\t\t"),
-    kimlikSatiri("Başvuru Tarihi",          f.basvuru_tarihi ? trTarih(f.basvuru_tarihi) : "-", "\t\t"),
-    kimlikSatiri("Sosyal İnceleme Tarihi", bugunTarih, "\t"),
+    // KİŞİ BİLGİLERİ (tablo ile hizalı)
+    new docx.Table({
+      width: { size: 9900, type: docx.WidthType.DXA },
+      borders: { top: { style: docx.BorderStyle.NONE }, bottom: { style: docx.BorderStyle.NONE }, left: { style: docx.BorderStyle.NONE }, right: { style: docx.BorderStyle.NONE }, insideH: { style: docx.BorderStyle.NONE }, insideV: { style: docx.BorderStyle.NONE } },
+      rows: [
+        kimlikSatiriRow("Adı Soyadı",             f.ad_soyad),
+        kimlikSatiriRow("Cinsiyeti",              f.cinsiyet || "-"),
+        kimlikSatiriRow("T.C. No",                f.tc || "-"),
+        kimlikSatiriRow("Doğum Tarihi",           f.dogum ? f.dogum.split("-").reverse().join(".") : "-"),
+        kimlikSatiriRow("Medeni Hali",            f.medeni || "-"),
+        kimlikSatiriRow("Çocuk Sayısı",           f.cocuk || "-"),
+        kimlikSatiriRow("Mesleği",                f.meslek || "-"),
+        kimlikSatiriRow("Kurumdan Talebi",        f.talep || "-"),
+        kimlikSatiriRow("Adres",                  f.adres || "-"),
+        kimlikSatiriRow("Tel No",                 f.telefon || "-"),
+        kimlikSatiriRow("Raporu Düzenleyen",      ((aktifKullanici && aktifKullanici.ad) ? aktifKullanici.ad : "Sosyal Hizmet Uzmanı") + " – Sosyal Hizmet Uzmanı"),
+        kimlikSatiriRow("Başvuru Tarihi",         f.basvuru_tarihi ? trTarih(f.basvuru_tarihi) : "-"),
+        kimlikSatiriRow("Sosyal İnceleme Tarihi", bugunTarih),
+      ]
+    }),
     bos(),
 
     // BAŞVURU BİLGİLERİ
@@ -1536,7 +1543,7 @@ document.addEventListener("DOMContentLoaded", function() {
   if (pinEkran) pinEkran.style.display = "flex";
   if (app) app.style.display = "none";
   const hata = document.getElementById("pin-hata");
-  if (hata) hata.textContent = "Kullanıcı seçin";
+  if (hata) hata.textContent = "";
   _pinTemizle();
   secilenKullanici = null;
   aktifKullanici = null;

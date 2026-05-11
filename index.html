@@ -741,15 +741,14 @@ function radioSec(tip, deger, btn) {
 
 // ── SYDV / BELEDİYE TOGGLE ──
 function medeniDegisti() {
-  const val = document.getElementById("medeni").value;
+  const val = document.getElementById("medeni")?.value || "";
   const esAlan = document.getElementById("es-bilgi-alan");
-  // Bekar, Boşanmış, Dul ise eş bilgisi gizle
   const esGizle = (val === "Bekar" || val === "Boşanmış" || val === "Dul" || val === "");
-  esAlan.style.display = esGizle ? "none" : "block";
+  if (esAlan) esAlan.style.display = esGizle ? "none" : "block";
   if (esGizle) {
-    document.getElementById("es_ad").value = "";
-    document.getElementById("es_yas").value = "";
-    document.getElementById("es_meslek").value = "";
+    const esAd = document.getElementById("es_ad"); if (esAd) esAd.value = "";
+    const esYas = document.getElementById("es_yas"); if (esYas) esYas.value = "";
+    const esMeslek = document.getElementById("es_meslek"); if (esMeslek) esMeslek.value = "";
   }
 }
 
